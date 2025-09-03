@@ -3,10 +3,9 @@ import { Link, useNavigate } from "react-router-dom";
 import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
-import app from './App.jsx';
 
 
-function App() {
+function Login() {
   const [count, setCount] = useState(0);
   const navigate = useNavigate();
 
@@ -94,7 +93,7 @@ function App() {
  
  ); 
 }
-export default App;
+export default Login;
 
 
 

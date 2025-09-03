@@ -7,6 +7,7 @@ import {
   QuestionMarkCircleIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import { Link } from "react-router";
 
 /*
   White-heading visual concept:
@@ -16,9 +17,9 @@ import {
 */
 
 const items = [
-  { id: "dashboard", label: "Dashboard", Icon: HomeIcon },
-  { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon },
-  { id: "earnings", label: "Earnings", Icon: ChartBarIcon },
+  { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route:'/' },
+  { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route:'/jobs' },
+  { id: "earnings", label: "Earnings", Icon: ChartBarIcon , route:'/earning'},
   { id: "profile", label: "Profile", Icon: UserIcon },
   { id: "help", label: "Help & Support", Icon: QuestionMarkCircleIcon },
 ];
@@ -81,6 +82,7 @@ export default function Sidebar() {
       <nav className="flex-1">
         <ul className="space-y-1">
           {items.map((it) => (
+            <Link to={it.route}>
             <NavItem
               key={it.id}
               Icon={it.Icon}
@@ -88,6 +90,7 @@ export default function Sidebar() {
               active={activeId === it.id}
               onClick={() => setActiveId(it.id)}
             />
+            </Link>
           ))}
         </ul>
       </nav>
