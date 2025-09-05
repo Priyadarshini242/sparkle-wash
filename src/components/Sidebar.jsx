@@ -17,7 +17,7 @@ import { Link } from "react-router";
 */
 
 const items = [
-  { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route:'/' },
+  { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route:'/dashboard' },
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route:'/jobs' },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon , route:'/earning'},
   { id: "profile", label: "Profile", Icon: UserIcon },
