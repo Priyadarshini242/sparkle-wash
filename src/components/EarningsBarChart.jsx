@@ -1,6 +1,4 @@
-// export default function EarningsBarChart() {
-// export default function EarningsBarChart() {
-
+// src/components/EarningsBarChart.jsx
 import React from "react";
 import {
   BarChart,
@@ -25,9 +23,9 @@ const data = [
 
 export default function EarningsBarChart() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6 bg-gray-50">
+    <div className="w-full flex flex-col lg:flex-row gap-6 p-6 bg-gray-50">
       {/* Earnings Chart */}
-      <div className="lg:col-span-2 bg-white rounded-2xl shadow p-5">
+      <div className="flex-1 bg-white rounded-2xl shadow p-5">
         <h2 className="text-lg font-semibold mb-4">Recent Earnings</h2>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data} barSize={40}>
@@ -36,13 +34,13 @@ export default function EarningsBarChart() {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Bar dataKey="Car" fill="#2563eb" radius={[8, 8, 0, 0]} /> 
+            <Bar dataKey="Car" fill="#2563eb" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
 
       {/* Earnings Summary */}
-      <div className="bg-white rounded-2xl shadow p-5 flex flex-col justify-between">
+      <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow p-5 flex flex-col justify-between">
         <h2 className="text-lg font-semibold mb-4">Earnings Summary</h2>
 
         <div className="space-y-3">

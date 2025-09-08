@@ -31,29 +31,26 @@ export default function DashBoardWelcome() {
     },
   ];
 
-  return (
+  
+    return (
     <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
       <Sidebar />
+
       {/* Main Content */}
       <main className="flex-1 bg-white p-10 overflow-auto">
-        {/* Header Section (Welcome, Toggle, etc.) */}
+        {/* Header Section */}
         <HeaderCard />
+
         {/* Dashboard Content */}
         <DashboardCards />
 
-        <section className="max-w-10xl mx-auto flex flex-col lg:flex-row gap-6 mt-6">
-         {/* Left Column - JobsList + UpcomingJobs + JobHeader */}
-          <div>
-            <div className="flex flex-col gap-6">
-                <div className="bg-white  text-black shadow rounded-xl p-4">
-                  <h1 className="text-2xl font-bold text-gray-800 mb-4"></h1>
-                  <EarningsBarChart />
-                </div>
-            </div>
-          </div>
-        </section> 
-         </main>
+        {/* Earnings Section - Full Width */}
+        <section className="w-full mt-6">
+          <EarningsBarChart />
+        </section>
+      </main>
     </div>
   );
 }
+

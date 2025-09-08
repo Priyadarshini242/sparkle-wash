@@ -38,7 +38,7 @@ const todaySchedule = [
 
 export default function DashboardCards() {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-60 min-screen">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* New Requests */}
         <div className="bg-white shadow-md rounded-2xl p-4">
@@ -53,7 +53,7 @@ export default function DashboardCards() {
                 <div className="flex items-start gap-3">
                   <div className="bg-blue-100 p-2 rounded-full">{req.icon}</div>
                   <div>
-                    <p className="font-medium">{req.name}</p>
+                    <p className="font-medium">{req.name}</p> 
                     <p className="text-sm text-gray-600">{req.vehicle}</p>
                     <div className="flex items-center text-sm text-gray-500 gap-2 mt-1">
                       <MapPin className="w-4 h-4" /> {req.location}
