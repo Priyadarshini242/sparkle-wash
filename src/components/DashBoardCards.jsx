@@ -1,4 +1,6 @@
 import React from "react";
+import { Clock, MapPin, Car, Bike } from "lucide-react";
+
 
 export default function DashboardCards() {
   const requests = [
@@ -8,7 +10,7 @@ export default function DashboardCards() {
       location: "Downtown Car Hub",
       time: "10:30 AM",
       price: "₹35.00",
-      icon: "🚗",
+      icon: <Car className="text-orange-500" size={28} />,
     },
     {
       name: "Michael Roberts",
@@ -16,7 +18,7 @@ export default function DashboardCards() {
       location: "Westside Mall Parking",
       time: "11:15 AM",
       price: "₹25.00",
-      icon: "🚗",
+      icon: <Car className="text-gray-500" size={28} />,
     },
     {
       name: "Emily Chen",
@@ -24,7 +26,7 @@ export default function DashboardCards() {
       location: "Parkview Apartments",
       time: "12:00 PM",
       price: "₹18.50",
-      icon: "🏍️",
+      icon: <Bike className="text-gray-500" size={28} />,
     },
   ];
 

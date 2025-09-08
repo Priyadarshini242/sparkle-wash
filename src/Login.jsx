@@ -32,7 +32,7 @@ function Login() {
           <p className="text-grey font-normal mb-6">Enter your Credentials to access the admin dashboard</p>
           <form className="space-y-6 w-full">
             <div>
-                <div class="flex items-center border rounded-lg px-3 py-2 bg-white">
+                <div class="flex items-center px-3 py-2 bg-white">
                 {/* <!-- Email icon --> */}
                 <svg xmlns="http://www.w3.org/2000/svg" 
                     fill="none" viewBox="0 0 24 24" 
@@ -46,18 +46,30 @@ function Login() {
                       class="ml-2 w-full outline-none border-none" />
               </div>
             </div>
-                <div class="flex items-center border rounded-lg px-3 py-2 mt-3 bg-white">
-               {/* <!-- Password input --> */}
-                <input type="password" placeholder="Enter your password"
-                      class="w-full outline-none border-none" />
-                {/* <!-- Eye icon --> */}
-                <svg xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" viewBox="0 0 24 24" 
-                    stroke-width="1.5" stroke="currentColor" 
-                    class="w-5 h-5 text-gray-500 cursor-pointer">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c2.25-4.5 6.75-7.5 9.75-7.5s7.5 3 9.75 7.5c-2.25 4.5-6.75 7.5-9.75 7.5s-7.5-3-9.75-7.5z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-                </svg>
+                <div class="flex items-center px-3 py-2 mt-3 bg-white"> 
+                  <div class="flex items-center px-3 py-2 mt-3 bg-white">
+                 {/* <!-- Lock Icon --> */}
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke-width="1.5" stroke="currentColor" 
+                        class="w-5 h-5 text-gray-500">
+                      <path stroke-linecap="round" stroke-linejoin="round" 
+                            d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3m-1.5 0h12a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5z" />
+                    </svg>
+
+                    {/* <!-- Password Input --> */}
+                    <input type="password" 
+                          placeholder="Enter your password" 
+                          class="ml-2 w-full outline-none border-none text-gray-700 placeholder-gray-400" />
+                    {/* <!-- Eye icon --> */}
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke-width="1.5" stroke="currentColor" 
+                        class="w-5 h-5 text-gray-500 cursor-pointer">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12c2.25-4.5 6.75-7.5 9.75-7.5s7.5 3 9.75 7.5c-2.25 4.5-6.75 7.5-9.75 7.5s-7.5-3-9.75-7.5z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
+                    </svg>
+                  </div>
                </div>
                <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm">
                 <div className="flex items-center space-x-2 mb-2">
@@ -79,6 +91,17 @@ function Login() {
                    >
                   Login
                 </Link>
+              </div>
+              <div class="flex items-center px-4 py-2 mt-3 bg-white">
+                    {/* <!-- Lock Icon --> */}
+                    <svg xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" viewBox="0 0 24 24" 
+                        stroke-width="1.5" stroke="currentColor" 
+                        class="w-5 h-5 text-gray-500">
+                      <path stroke-linecap="round" stroke-linejoin="round" 
+                            d="M16.5 10.5V7.5a4.5 4.5 0 10-9 0v3m-1.5 0h12a1.5 1.5 0 011.5 1.5v7.5a1.5 1.5 0 01-1.5 1.5h-12a1.5 1.5 0 01-1.5-1.5v-7.5a1.5 1.5 0 011.5-1.5z" />
+                    </svg>
+                 <p>secure login with 256-bit encryption</p>
               </div>
           </form>
         </div>
