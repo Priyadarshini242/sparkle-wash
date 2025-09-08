@@ -7,19 +7,13 @@ import {
   QuestionMarkCircleIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { Link } from "react-router";
+import { Link,useLocation } from "react-router-dom";
 
-/*
-  White-heading visual concept:
-  - All labels/icons use solid white (text-white).
-  - Active item uses a subtle white translucent background and a yellow indicator bar.
-  - Hover increases contrast using hover:bg-white/10.
-*/
 
 const items = [
-  { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route:'/' },
-  { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route:'/jobs' },
-  { id: "earnings", label: "Earnings", Icon: ChartBarIcon , route:'/earning'},
+  { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route:"/dashboard" },
+  { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route:"/jobs" },
+  { id: "earnings", label: "Earnings", Icon: ChartBarIcon , route:"/earning"},
   { id: "profile", label: "Profile", Icon: UserIcon },
   { id: "help", label: "Help & Support", Icon: QuestionMarkCircleIcon },
 ];
@@ -82,6 +76,23 @@ export default function Sidebar() {
       <nav className="flex-1">
         <ul className="space-y-1">
           {items.map((it) => (
+            <Link key={it.id} to={it.route}>
+              <NavItem
+                Icon={it.Icon}
+                label={it.label}
+                active={location.pathname === it.route} // ✅ active based on route
+              />
+            </Link>
+          ))}
+        </ul>
+      </nav>
+
+
+
+
+      {/* <nav className="flex-1">
+        <ul className="space-y-1">
+          {items.map((it) => (
             <Link to={it.route}>
             <NavItem
               key={it.id}
@@ -93,7 +104,7 @@ export default function Sidebar() {
             </Link>
           ))}
         </ul>
-      </nav>
+      </nav> */}
 
       {/* Sign out pinned to bottom */}
       <div className="mt-auto border-t border-white/10 pt-4">
