@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/24/outline";
 import EarningsBarChart from "./components/EarningsBarChart.jsx";
 import Sidebar from "./components/Sidebar.jsx";
-import HeaderCard from "./components/ HeaderCard.jsx";
+import HeaderCard from "./components/HeaderCard.jsx";
 import JobHeader from "./components/JobHeader.jsx"
 import JobDetails from "./components/JobDetails.jsx";
 import React from "react";

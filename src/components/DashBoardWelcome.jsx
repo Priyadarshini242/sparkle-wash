@@ -7,7 +7,7 @@ import {
   BellIcon,
 } from "@heroicons/react/24/outline";
 import Sidebar from "./Sidebar.jsx";
-import HeaderCard from "./ HeaderCard.jsx";
+import HeaderCard from "./HeaderCard.jsx";
 import DashboardCards from "./DashBoardCards.jsx";
 import React from "react";
 import EarningsBarChart from "./EarningsBarChart.jsx";
