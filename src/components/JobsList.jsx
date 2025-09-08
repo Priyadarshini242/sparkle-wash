@@ -73,13 +73,7 @@ export default function JobsList() {
             {/* Right Section */}
             <div className="flex flex-col items-end space-y-2">
               {/* Status Badge */}
-              <span
-                className={`text-xs px-3 py-1 rounded-lg ${
-                  job.status === "In Progress"
-                    ? "bg-orange-100 text-orange-600"
-                    : "bg-blue-100 text-blue-600"
-                }`}
-              >
+              <span className={`text-xs px-3 py-1 rounded-lg ${job.status === "In Progress" ? "bg-orange-100 text-orange-600" : "bg-blue-100 text-blue-600"}`}>
                 {job.status}
               </span>
 

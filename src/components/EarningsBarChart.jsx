@@ -1,4 +1,3 @@
-
 // export default function EarningsBarChart() {
 // export default function EarningsBarChart() {
 

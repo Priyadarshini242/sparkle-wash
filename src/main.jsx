@@ -3,9 +3,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./Login.jsx";
 import DashBoard from "./DashBoard.jsx";
-
 import DashBoardWelcome from "./components/DashBoardWelcome.jsx";
-
 import DashBoardEarning from "./components/DashBoardEarning.jsx";
 import ProfileDashBoard from "./components/ProfileDashBoard.jsx";
 
@@ -19,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
 
-        <Route path="/login" element={<Login />}/>
+        <Route path="/" element={<Login />}/>
         <Route path="/dashboard" element={<DashBoardWelcome/>}/>
  
         <Route path="/login" element={<Login />} />
