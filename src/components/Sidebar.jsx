@@ -8,6 +8,8 @@ import {
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import { Link, useLocation } from "react-router-dom"; // ✅ useLocation
+import { Link,useLocation } from "react-router-dom";
+
 
 const items = [
 
@@ -81,7 +83,24 @@ export default function Sidebar() {
             </Link>
           ))}
         </ul>
-      </nav>
+      </nav> */}
+
+
+
+
+      {/* <nav className="flex-1">
+        <ul className="space-y-1">
+          {items.map((it) => (
+            <Link key={it.id} to={it.route}>
+              <NavItem
+                Icon={it.Icon}
+                label={it.label}
+                active={location.pathname === it.route} // ✅ active based on route
+              />
+            </Link>
+          ))}
+        </ul>
+      </nav> */}
 
       {/* Sign out */}
       <div className="mt-auto border-t border-white/10 pt-4">

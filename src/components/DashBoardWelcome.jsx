@@ -9,7 +9,6 @@ import {
 import Sidebar from "./Sidebar.jsx";
 import HeaderCard from "./HeaderCard.jsx";
 import DashboardCards from "./DashBoardCards.jsx";
-import React from "react";
 import EarningsBarChart from "./EarningsBarChart.jsx";
 
 export default function DashBoardWelcome() {
@@ -36,7 +35,6 @@ export default function DashBoardWelcome() {
     <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
       <Sidebar />
-
       {/* Main Content */}
       <main className="flex-1 bg-white p-10 overflow-auto">
         {/* Header Section (Welcome, Toggle, etc.) */}
@@ -48,14 +46,6 @@ export default function DashBoardWelcome() {
          {/* Left Column - JobsList + UpcomingJobs + JobHeader */}
           <div>
             <div className="flex flex-col gap-6">
-                {/* <div className="bg-white shadow rounded-xl p-4">
-                  <JobHeader/>
-                </div> */}
-            
-                {/* <div className="bg-white  text-black shadow rounded-xl p-4">
-                  <h1 className="text-2xl font-bold text-gray-800 mb-4"></h1>
-                  <JobsList />
-                </div> */}
                 <div className="bg-white  text-black shadow rounded-xl p-4">
                   <h1 className="text-2xl font-bold text-gray-800 mb-4"></h1>
                   <EarningsBarChart />
