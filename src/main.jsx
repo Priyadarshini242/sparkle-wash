@@ -6,25 +6,35 @@ import DashBoard from "./DashBoard.jsx";
 import DashBoardWelcome from "./components/DashBoardWelcome.jsx";
 import DashBoardEarning from "./components/DashBoardEarning.jsx";
 import ProfileDashBoard from "./components/ProfileDashBoard.jsx";
-
-import Jobs from "./Jobs.jsx";
+import SidebarAdmin from "./components/SidebarAdmin.jsx";
+import SidebarDashboard from "./components/SidebarDashboard.jsx";
+import PrivateRoute from "./PrivateRoute.jsx";
 import "./index.css"; 
-
-
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
+        {/* Public Route */}
+        <Route path="/" element={<Login />} />
 
-        <Route path="/" element={<Login />}/>
-        <Route path="/dashboard" element={<DashBoardWelcome/>}/>
- 
-        <Route path="/login" element={<Login />} />
-        <Route path="/jobs" element={<DashBoard/>}/>
-        <Route path="/earning" element={<DashBoardEarning/>}/>
-        <Route path="/profile" element={<ProfileDashBoard/>}/>
+        {/* Protected Routes */}
+        <Route path="/dashboard"element={<PrivateRoute> <DashBoardWelcome /> </PrivateRoute>}/>
+        <Route path="/jobs"element={ <PrivateRoute> <DashBoard /> </PrivateRoute> }/>
+        <Route path="/earning"element={ <PrivateRoute> <DashBoardEarning /> </PrivateRoute> } />
+        <Route path="/profile"element={ <PrivateRoute>  <ProfileDashBoard /> </PrivateRoute>  }/>
 
+        {/* Admin Pages */}
+        <Route
+          path="/side" element={ <PrivateRoute> <SidebarDashboard /> </PrivateRoute> }  />
+        <Route
+          path="/admin"
+          element={
+            <PrivateRoute>
+              <SidebarAdmin />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

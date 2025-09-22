@@ -15,8 +15,15 @@ import React from "react";
 import JobsList from "./components/JobsList.jsx";
 import UpcomingJobs from "./components/UpComingJobs.jsx";
 
+
 export default function Dashboard() {
-  // Example request data (can be passed to child components later)
+
+
+
+const token = localStorage.getItem("token");
+
+
+ // Example request data (can be passed to child components later)
   const requests = [
     {
       name: "Sarah Johnson",
@@ -34,9 +41,12 @@ export default function Dashboard() {
       time: "Downtown car Hub · 11:00 AM",
     },
   ];
+  
+    
+ 
 
   return (
-    <div className="flex h-screen w-screen bg-gray-100">
+  <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
       <Sidebar />
 
@@ -79,3 +89,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

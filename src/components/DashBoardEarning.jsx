@@ -41,19 +41,19 @@ export default function DashBoardEarning() {
   const COLORS = ["#2563eb", "#facc15", "#22c55e"];
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+   <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64">
+      
         <Sidebar />
-      </div>
+      
 
       {/* Main Content */}
-      <div className="flex-1 p-6 space-y-8">
+      <main className="flex-1 bg-white p-10 overflow-auto">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center p-1">
           <div>
             <h1 className="text-xl font-bold">Earnings & History</h1>
-            <p className="text-gray-500">Friday, June 10, 2023</p>
+            <p className="text-gray-500 text-start text-sm">Friday, June 10, 2023</p>
           </div>
           <button className="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded-lg font-semibold shadow">
             View Schedule
@@ -61,9 +61,9 @@ export default function DashBoardEarning() {
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-5">
           {/* Total Earnings */}
-          <div className="bg-white shadow rounded-2xl p-4 flex flex-col">
+          <div className="bg-white shadow rounded-2xl p-2 flex flex-col">
             <div className="flex items-center gap-2 mb-2">
               <Wallet className="text-blue-600" />
               <span className="text-gray-500 text-sm">Total Earnings</span>
@@ -104,7 +104,7 @@ export default function DashBoardEarning() {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-4">
           {/* Earnings Trend */}
           <div className="bg-white shadow rounded-2xl p-4 md:col-span-2">
             <div className="flex justify-between items-center mb-4">
@@ -157,7 +157,7 @@ export default function DashBoardEarning() {
 
         {/* Earnings History Table (Full Width Below) */}
         <EarningsHistory />
-      </div>
+      </main>
     </div>
   );
 }

@@ -8,19 +8,18 @@ export default function ProfileDashboard() {
   const [available, setAvailable] = useState(true);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+   <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
-      <div className="w-64">
-        <Sidebar />
-      </div>
+       <Sidebar />
+      
 
       {/* Main Content */}
-      <div className="flex-1 p-6 space-y-8">
+       <main className="flex-1 bg-white p-10 overflow-auto">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center p-1">
           <div>
             <h1 className="text-xl font-bold">Your Profile</h1>
-            <p className="text-gray-500">Friday, June 10, 2023</p>
+            <p className="text-gray-500 text-start text-sm">Friday, June 10, 2023</p>
           </div>
           <button className="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded-lg font-semibold shadow">
             View Schedule
@@ -28,14 +27,14 @@ export default function ProfileDashboard() {
         </div>
 
         {/* Current Status */}
-        <div className="bg-white shadow rounded-2xl p-6 flex items-center justify-between">
+        <div className="bg-white shadow rounded-2xl p-5 flex items-center justify-between">
           <div>
-            <h3 className="text-gray-700 font-semibold">Your Current Status</h3>
+            <h3 className="text-gray-700 text-start font-semibold">Your Current Status</h3>
             <p className="text-gray-500 text-sm">
               Toggle your availability for new wash requests
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
             <span
               className={`font-medium ${
                 available ? "text-green-600" : "text-gray-400"
@@ -64,7 +63,7 @@ export default function ProfileDashboard() {
         </div>
 
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-5">
           {/* Completed Washes */}
           <div className="bg-white shadow rounded-2xl p-6 flex flex-col items-center">
             <ShoppingCart className="text-blue-500 mb-2" size={28} />
@@ -96,7 +95,7 @@ export default function ProfileDashboard() {
              <ProfileDetails/>
 
 
-      </div>
+      </main>
     </div>
   );
 }

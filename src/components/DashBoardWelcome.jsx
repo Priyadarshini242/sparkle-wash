@@ -11,6 +11,7 @@ import HeaderCard from "./HeaderCard.jsx";
 import DashboardCards from "./DashBoardCards.jsx";
 import EarningsBarChart from "./EarningsBarChart.jsx";
 
+
 export default function DashBoardWelcome() {
   // Example request data (can be passed to child components later)
   const requests = [
@@ -50,6 +51,8 @@ export default function DashBoardWelcome() {
           <EarningsBarChart />
         </section>
       </main>
+     
+
     </div>
   );
 }

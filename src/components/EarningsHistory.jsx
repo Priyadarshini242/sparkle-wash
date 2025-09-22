@@ -1,4 +1,4 @@
-// src/components/EarningsHistory.jsx
+src/components/EarningsHistory.jsx
 import React from "react";
 import { Search, Filter, MoreVertical, MapPin, Car, Bike } from "lucide-react";
 
@@ -8,7 +8,7 @@ export default function EarningsHistory() {
       id: "E-2023-042",
       date: "June 10, 2023 10:30 AM",
       customer: "Sarah Johnson",
-      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-gray-600" /> },
+      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-blue-600" /> },
       location: "Downtown Car Hub",
       fee: "₹35.00",
       tip: "₹5.00",
@@ -18,7 +18,7 @@ export default function EarningsHistory() {
       id: "E-2023-041",
       date: "June 10, 2023 01:15 PM",
       customer: "Michael Roberts",
-      service: { type: "Car Wash", plan: "Standard", icon: <Car className="w-4 h-4 text-gray-600" /> },
+      service: { type: "Car Wash", plan: "Standard", icon: <Car className="w-4 h-4 text-blue-600" /> },
       location: "Westside Mall Parking",
       fee: "₹25.00",
       tip: "₹3.50",
@@ -28,7 +28,7 @@ export default function EarningsHistory() {
       id: "E-2023-040",
       date: "June 9, 2023 11:00 AM",
       customer: "Emily Chen",
-      service: { type: "Bike Wash", plan: "Basic", icon: <Bike className="w-4 h-4 text-gray-500" /> },
+      service: { type: "Bike Wash", plan: "Basic", icon: <Bike className="w-4 h-4 text-blue-600" /> },
       location: "Parkview Apartments",
       fee: "₹18.50",
       tip: "₹2.00",
@@ -38,7 +38,7 @@ export default function EarningsHistory() {
       id: "E-2023-039",
       date: "June 9, 2023 03:30 PM",
       customer: "David Wilson",
-      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-gray-600" /> },
+      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-blue-600" /> },
       location: "Downtown Car Hub",
       fee: "₹35.00",
       tip: "₹7.50",
@@ -48,7 +48,7 @@ export default function EarningsHistory() {
       id: "E-2023-038",
       date: "June 8, 2023 09:45 AM",
       customer: "Jennifer Lopez",
-      service: { type: "Bike Wash", plan: "Standard", icon: <Bike className="w-4 h-4 text-gray-500" /> },
+      service: { type: "Bike Wash", plan: "Standard", icon: <Bike className="w-4 h-4 text-blue-600" /> },
       location: "Central Bike Station",
       fee: "₹22.00",
       tip: "₹3.00",
@@ -58,7 +58,7 @@ export default function EarningsHistory() {
       id: "E-2023-037",
       date: "June 8, 2023 02:00 PM",
       customer: "Robert Brown",
-      service: { type: "Car Wash", plan: "Basic", icon: <Car className="w-4 h-4 text-gray-600" /> },
+      service: { type: "Car Wash", plan: "Basic", icon: <Car className="w-4 h-4 text-blue-600" /> },
       location: "Eastside Service Center",
       fee: "₹20.00",
       tip: "₹2.50",
@@ -68,7 +68,7 @@ export default function EarningsHistory() {
       id: "E-2023-036",
       date: "June 7, 2023 10:15 AM",
       customer: "Alex Thompson",
-      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-gray-600" /> },
+      service: { type: "Car Wash", plan: "Premium", icon: <Car className="w-4 h-4 text-blue-600" /> },
       location: "Downtown Car Hub",
       fee: "₹35.00",
       tip: "₹10.00",
@@ -111,7 +111,7 @@ export default function EarningsHistory() {
               <th className="py-3 px-4">Location</th>
               <th className="py-3 px-4">Service Fee</th>
               <th className="py-3 px-4">Tip</th>
-              <th className="py-3 px-4">Total</th>
+              <th className="py-3 px-4">Total</th>  
               <th className="py-3 px-4"></th>
             </tr>
           </thead>
@@ -124,7 +124,7 @@ export default function EarningsHistory() {
                 <td className="py-3 px-4 flex items-center gap-2">
                   {row.service.icon}
                   <div>
-                    <p>{row.service.type}</p>
+                    <p className="text-xs text-gray-500">{row.service.type}</p>
                     <p className="text-xs text-gray-500">{row.service.plan}</p>
                   </div>
                 </td>
@@ -139,6 +139,7 @@ export default function EarningsHistory() {
                     {row.total}
                   </span>
                 </td>
+
                 <td className="py-3 px-4 text-right">
                   <MoreVertical className="w-4 h-4 text-gray-400 cursor-pointer" />
                 </td>
@@ -161,4 +162,4 @@ export default function EarningsHistory() {
       </div>
     </div>
   );
-}``
+};
