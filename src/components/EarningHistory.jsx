@@ -1,4 +1,3 @@
-
 // src/components/EarningsHistory.jsx
 import React from "react";
 import { Search, Filter, MoreVertical, MapPin, Car, Bike } from "lucide-react";
@@ -102,9 +101,9 @@ export default function EarningsHistory() {
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
+        <table className="w-full text-sm text-left table-auto">
           <thead>
-            <tr className="text-gray-500 border-b">
+            <tr className="text-gray-500 border-b bg-gray-50">
               <th className="py-3 px-4">ID</th>
               <th className="py-3 px-4">Date & Time</th>
               <th className="py-3 px-4">Customer</th>
@@ -118,29 +117,33 @@ export default function EarningsHistory() {
           </thead>
           <tbody>
             {data.map((row) => (
-              <tr key={row.id} className="border-b last:border-0">
-                <td className="py-3 px-4">{row.id}</td>
-                <td className="py-3 px-4">{row.date}</td>
-                <td className="py-3 px-4">{row.customer}</td>
-                <td className="py-3 px-4 flex items-center gap-2">
-                  {row.service.icon}
-                  <div>
-                    <p>{row.service.type}</p>
-                    <p className="text-xs text-gray-500">{row.service.plan}</p>
+              <tr key={row.id} className="border-b last:border-0 h-12">
+                <td className="py-3 px-4 align-middle">{row.id}</td>
+                <td className="py-3 px-4 align-middle">{row.date}</td>
+                <td className="py-3 px-4 align-middle">{row.customer}</td>
+                <td className="py-3 px-4 align-middle">
+                  <div className="flex items-center gap-2">
+                    {row.service.icon}
+                    <div>
+                      <p>{row.service.type}</p>
+                      <p className="text-xs text-gray-500">{row.service.plan}</p>
+                    </div>
                   </div>
                 </td>
-                <td className="py-3 px-4 flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  {row.location}
+                <td className="py-3 px-4 align-middle">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    {row.location}
+                  </div>
                 </td>
-                <td className="py-3 px-4">{row.fee}</td>
-                <td className="py-3 px-4 text-green-600">{row.tip}</td>
-                <td className="py-3 px-4">
+                <td className="py-3 px-4 align-middle">{row.fee}</td>
+                <td className="py-3 px-4 align-middle text-green-600">{row.tip}</td>
+                <td className="py-3 px-4 align-middle">
                   <span className="bg-yellow-400 text-black font-semibold px-2 py-1 rounded-lg">
                     {row.total}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-right">
+                <td className="py-3 px-4 align-middle text-right">
                   <MoreVertical className="w-4 h-4 text-gray-400 cursor-pointer" />
                 </td>
               </tr>

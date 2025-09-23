@@ -7,19 +7,15 @@ import {
   QuestionMarkCircleIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
-import { Link, useLocation } from "react-router-dom"; // ✅ useLocation
+import { Link, useLocation, useNavigate } from "react-router-dom"; // ✅ useNavigate
 
 
 const items = [
-
-
-  
   { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route: "/dashboard" },
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route: "/jobs" },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon, route: "/earning" },
   { id: "profile", label: "Profile", Icon: UserIcon, route: "/profile" },
   { id: "help", label: "Help & Support", Icon: QuestionMarkCircleIcon, route: "/help" },
-
 ];
 
 function NavItem({ Icon, label, active }) {
@@ -44,11 +40,25 @@ function NavItem({ Icon, label, active }) {
   );
 }
 
-export default function Sidebar() {
-  const location = useLocation(); // ✅ get current path
 
-  return (
-    <aside className="flex h-screen w-64 flex-col bg-gradient-to-b from-indigo-600 to-blue-600 text-white p-4">
+
+export default function Sidebar() {
+  const location = useLocation(); // ✅ current path
+  const navigate = useNavigate(); // ✅ navigation
+   
+  
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("allowNavigation");
+
+     // ✅ replace history so user cannot go forward
+      navigate("/", { replace: true });
+
+   
+    }
+ return (
+  <aside className="flex h-screen w-64 flex-col bg-gradient-to-b from-indigo-600 to-blue-600 text-white p-4">
       {/* Brand */}
       <div className="mb-6 flex items-center gap-3">
         <div className="text-2xl">💧</div>
@@ -77,23 +87,18 @@ export default function Sidebar() {
               <NavItem
                 Icon={it.Icon}
                 label={it.label}
-                active={location.pathname === it.route} // ✅ active based on route
+                active={location.pathname === it.route}
               />
             </Link>
           ))}
         </ul>
-      </nav> 
-
-
-
-
-  
+      </nav>
 
       {/* Sign out */}
       <div className="mt-auto border-t border-white/10 pt-4">
         <button
           className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-white hover:bg-white/6 transition"
-          onClick={() => alert("Sign out clicked")}
+          onClick={handleLogout}
         >
           <ArrowLeftOnRectangleIcon className="h-5 w-5 text-white" />
           <span className="font-medium">Sign Out</span>
@@ -102,3 +107,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
