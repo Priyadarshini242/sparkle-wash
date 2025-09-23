@@ -26,15 +26,8 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
         {/* Admin Pages */}
         <Route
-          path="/side" element={ <PrivateRoute> <SidebarDashboard /> </PrivateRoute> }  />
-        <Route
-          path="/admin"
-          element={
-            <PrivateRoute>
-              <SidebarAdmin />
-            </PrivateRoute>
-          }
-        />
+          path="/side" element={  <SidebarDashboard />  }  />
+        <Route path="/admin" element={  <SidebarAdmin />  } />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
