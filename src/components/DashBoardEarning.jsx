@@ -18,6 +18,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { BellIcon } from "@heroicons/react/24/outline";
 import Sidebar from "./Sidebar";
 import EarningsHistory from "./EarningHistory";
 
@@ -55,9 +56,21 @@ export default function DashBoardEarning() {
             <h1 className="text-xl font-bold">Earnings & History</h1>
             <p className="text-gray-500 text-start text-sm">Friday, June 10, 2023</p>
           </div>
-          <button className="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded-lg font-semibold shadow">
+          {/* Notifications + Button */}
+        <div className="flex items-center gap-4">
+          {/* Notification Bell */}
+          <div className="relative">
+            <BellIcon className="h-6 w-6 text-gray-600" />
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+              3
+            </span>
+          </div>
+
+          {/* View Schedule Button */}
+          <button className="bg-yellow-400 hover:bg-yellow-500 text-blue font-semibold px-5 py-2 rounded-lg shadow-md">
             View Schedule
           </button>
+        </div>
         </div>
 
         {/* Stats Section */}

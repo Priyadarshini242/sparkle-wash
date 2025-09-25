@@ -4,6 +4,7 @@ import {
   ShoppingCartIcon,
   ChartBarIcon,
   UserIcon,
+  WrenchScrewdriverIcon,
   QuestionMarkCircleIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
@@ -15,6 +16,7 @@ const items = [
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route: "/jobs" },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon, route: "/earning" },
   { id: "profile", label: "Profile", Icon: UserIcon, route: "/profile" },
+  { id: "washer", label: "Washer Portal", Icon: WrenchScrewdriverIcon, route: "/washer" },
   { id: "help", label: "Help & Support", Icon: QuestionMarkCircleIcon, route: "/help" },
 ];
 

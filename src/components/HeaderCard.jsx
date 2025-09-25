@@ -28,7 +28,7 @@ export default function HeaderCard() {
           </div>
 
           {/* View Schedule Button */}
-          <button className="bg-yellow-400 hover:bg-yellow-500 text-white font-semibold px-5 py-2 rounded-lg shadow-md">
+          <button className="bg-yellow-400 hover:bg-yellow-500 text-blue font-semibold px-5 py-2 rounded-lg shadow-md">
             View Schedule
           </button>
         </div>
@@ -69,7 +69,7 @@ export default function HeaderCard() {
             Busy
           </span>
         </div>
-         </div>
-        </div>
+       </div>
+      </div>
   );
 }
