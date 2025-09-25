@@ -6,7 +6,7 @@ import DashBoard from "./DashBoard.jsx";
 import DashBoardWelcome from "./components/DashBoardWelcome.jsx";
 import DashBoardEarning from "./components/DashBoardEarning.jsx";
 import ProfileDashBoard from "./components/ProfileDashBoard.jsx";
-import SidebarAdmin from "./components/SidebarAdmin.jsx";
+import Usermanagement from "./components/Usermanagement.jsx";
 import SidebarDashboard from "./components/SidebarDashboard.jsx";
 import WasherAuth from "./components/WasherAuth.jsx";
 import WasherDashboard from "./components/WasherDashboard.jsx";
@@ -29,7 +29,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         {/* Admin Pages */}
         <Route
           path="/side" element={  <SidebarDashboard />  }  />
-        <Route path="/admin" element={  <SidebarAdmin />  } />
+        <Route path="/admin" element={ <PrivateRoute><Usermanagement /> </PrivateRoute>  } />
 
         {/* Washer Routes */}
         <Route path="/washer" element={<WasherAuth />} />
