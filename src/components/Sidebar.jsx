@@ -13,6 +13,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom"; // ✅ useNav
 
 const items = [
   { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route: "/dashboard" },
+  { id: "customer", label: "Customer", Icon: UserIcon, route: "/admin" },
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route: "/jobs" },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon, route: "/earning" },
   { id: "profile", label: "Profile", Icon: UserIcon, route: "/profile" },

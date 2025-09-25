@@ -9,6 +9,7 @@ import ContextMenu from "./ContextMenu";
 import CustomerHistoryModal from "./CustomerHistoryModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import WasherAllocationModal from "./WasherAllocationModal";
+import Sidebar from "./Sidebar";
 
 // API Configuration
 const API_BASE_URL = 'http://localhost:5000/api';
@@ -271,7 +272,12 @@ function Usermanagement() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+
+    <div className="flex h-screen w-screen bg-gray-100">
+      {/* Sidebar */}
+      <Sidebar />
+    {/* Main Content */}
+      <main className="flex-1 bg-white p-10 overflow-auto">
       {/*Tob Header */}
       <header className="flex justify-between items-center mb-6">
         <div>
@@ -322,10 +328,10 @@ function Usermanagement() {
       </div>
 
       {/* Summary + Activity + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <UserSummary customers={customers} />
         <RecentActivity />
-        <QuickActions onAddCustomerClick={() => setIsAddCustomerModalOpen(true)} />
+        {/* <QuickActions onAddCustomerClick={() => setIsAddCustomerModalOpen(true)} /> */}
       </div>
 
       {/* Table section */}
@@ -401,13 +407,13 @@ function Usermanagement() {
               </select>
               
               <div className="flex gap-2">
-                <button 
+                {/* <button 
                   onClick={fetchCustomers}
                   className="border border-blue-500 text-blue-500 rounded px-4 py-2 hover:bg-blue-50 transition-colors"
                   disabled={loading}
                 >
                   {loading ? 'Loading...' : 'Refresh'}
-                </button>
+                </button> */}
                 
                 <button 
                   onClick={clearFilters}
@@ -531,6 +537,7 @@ function Usermanagement() {
         onWasherAllocated={handleWasherAllocated}
         customer={customerToAllocate}
       />
+    </main>
     </div>
   );
 }
@@ -546,8 +553,8 @@ const UserSummary = ({ customers = [] }) => {
   const inactivePercentage = totalUsers ? (inactiveUsers / totalUsers) * 100 : 0;
 
   return (
-    <div className="bg-white p-4 rounded shadow">
-      <h3 className="font-semibold mb-4">User Summary</h3>
+    <div className="bg-white p-9 rounded shadow">
+      <h3 className="font-medium  text-start text-gray-800">User Summary</h3>
       <div className="mb-4">
         <div className="flex justify-between mb-1 text-sm">
           <span>Active Users</span>
@@ -590,7 +597,7 @@ const UserSummary = ({ customers = [] }) => {
 
 const RecentActivity = () => (
   <div className="bg-white p-4 rounded shadow">
-    <h3 className="font-semibold mb-4">Recent Activity</h3>
+    <h3 className="font-medium  text-start text-gray-800">Recent Activity</h3>
     <ul className="space-y-3 text-sm text-gray-600">
       <li><span className="font-bold">10 mins ago:</span> User Created - Alex Johnson</li>
       <li><span className="font-bold">25 mins ago:</span> Status Changed - Sarah Miller</li>
@@ -599,19 +606,19 @@ const RecentActivity = () => (
   </div>
 );
 
-const QuickActions = ({ onAddCustomerClick }) => (
-  <div className="bg-white p-4 rounded shadow">
-    <h3 className="font-semibold mb-4">Quick Actions</h3>
-    <button 
-      onClick={onAddCustomerClick}
-      className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200"
-    >
-      + Add New Customer
-    </button>
-    <button className="w-full border border-gray-300 py-2 rounded mb-2 hover:bg-gray-100">Generate User Report</button>
-    <button className="w-full border border-gray-300 py-2 rounded hover:bg-gray-100">User Permissions</button>
-  </div>
-);
+// const QuickActions = ({ onAddCustomerClick }) => (
+//   <div className="bg-white p-4 rounded shadow">
+//     <h3 className="font-semibold mb-4">Quick Actions</h3>
+//     <button 
+//       onClick={onAddCustomerClick}
+//       className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200"
+//     >
+//       + Add New Customer
+//     </button>
+//     <button className="w-full border border-gray-300 py-2 rounded mb-2 hover:bg-gray-100">Generate User Report</button>
+//     <button className="w-full border border-gray-300 py-2 rounded hover:bg-gray-100">User Permissions</button>
+//   </div>
+// );
 
 const CustomerTable = ({ 
   customers, 
@@ -826,6 +833,7 @@ const CustomerTable = ({
         </div>
       </div>
     </div>
+    
   );
 };
 
