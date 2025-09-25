@@ -8,6 +8,8 @@ import DashBoardEarning from "./components/DashBoardEarning.jsx";
 import ProfileDashBoard from "./components/ProfileDashBoard.jsx";
 import SidebarAdmin from "./components/SidebarAdmin.jsx";
 import SidebarDashboard from "./components/SidebarDashboard.jsx";
+import WasherAuth from "./components/WasherAuth.jsx";
+import WasherDashboard from "./components/WasherDashboard.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
 import "./index.css"; 
 
@@ -28,6 +30,10 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route
           path="/side" element={  <SidebarDashboard />  }  />
         <Route path="/admin" element={  <SidebarAdmin />  } />
+
+        {/* Washer Routes */}
+        <Route path="/washer" element={<WasherAuth />} />
+        <Route path="/washer/dashboard" element={<WasherDashboard />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
