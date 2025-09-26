@@ -151,7 +151,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 max-h-[90vh]">
           <div className="p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Add New Customer</h2>
@@ -311,7 +311,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
                   <button
                     type="button"
                     onClick={() => setIsPackageModalOpen(true)}
-                    className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-1 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     Select
                   </button>

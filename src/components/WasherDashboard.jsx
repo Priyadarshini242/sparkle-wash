@@ -268,22 +268,9 @@ const WasherDashboard = () => {
 
         {/* Filters Section */}
         <div className="bg-white rounded-lg shadow-sm mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-md font-medium text-gray-900">Filter Customers</h3>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50"
-              >
-                <FunnelIcon className="h-4 w-4" />
-                <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
-              </button>
-            </div>
-          </div>
           
-          {showFilters && (
             <div className="px-6 py-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Date Filter */}
                 <div>
                   <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
@@ -356,8 +343,7 @@ const WasherDashboard = () => {
                 </p>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
         {/* Customers List */}
         <div className="bg-white rounded-lg shadow-sm">
