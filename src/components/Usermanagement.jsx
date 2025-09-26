@@ -275,8 +275,7 @@ function Usermanagement() {
       setIsDeleting(false);
     }
   };
-
-  return (
+     return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
@@ -335,10 +334,9 @@ function Usermanagement() {
       </div>
 
       {/* Summary + Activity + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <UserSummary customers={customers} />
         <RecentActivity />
-        <QuickActions onAddCustomerClick={() => setIsAddCustomerModalOpen(true)} />
       </div>
 
       {/* Table section */}
@@ -412,15 +410,7 @@ function Usermanagement() {
               </select>
               
               <div className="flex gap-2">
-                <button 
-                  onClick={fetchCustomers}
-                  className="border border-blue-500 text-blue-500 rounded px-4 py-2 hover:bg-blue-50 transition-colors"
-                  disabled={loading}
-                >
-                  {loading ? 'Loading...' : 'Refresh'}
-                </button>
-                
-                <button 
+                 <button 
                   onClick={clearFilters}
                   className="border border-gray-400 text-gray-600 rounded px-4 py-2 hover:bg-gray-100 transition-colors"
                   title="Clear all filters"
@@ -578,7 +568,7 @@ const UserSummary = ({ customers = [] }) => {
 
   return (
     <div className="bg-white p-4 rounded shadow">
-      <h3 className="font-semibold mb-4">User Summary</h3>
+      <h3 className="text-start font-semibold mb-4">User Summary</h3>
       <div className="mb-4">
         <div className="flex justify-between mb-1 text-sm">
           <span>Active Users</span>
@@ -619,30 +609,33 @@ const UserSummary = ({ customers = [] }) => {
   );
 };
 
-const RecentActivity = () => (
-  <div className="bg-white p-4 rounded shadow">
-    <h3 className="font-semibold mb-4">Recent Activity</h3>
-    <ul className="space-y-3 text-sm text-gray-600">
-      <li><span className="font-bold">10 mins ago:</span> User Created - Alex Johnson</li>
-      <li><span className="font-bold">25 mins ago:</span> Status Changed - Sarah Miller</li>
-      <li><span className="font-bold">1 hour ago:</span> User Updated - David Wilson</li>
-    </ul>
-  </div>
-);
+const RecentActivity = () => {
+  const activities = [
+    { action: "User Created", user: "Alex Johnson", time: "10 minutes ago" },
+    { action: "Status Changed", user: "Sarah Miller", time: "25 minutes ago" },
+    { action: "User Updated", user: "David Wilson", time: "1 hour ago" },
+  ];
 
-const QuickActions = ({ onAddCustomerClick }) => (
-  <div className="bg-white p-4 rounded shadow">
-    <h3 className="font-semibold mb-4">Quick Actions</h3>
-    <button 
-      onClick={onAddCustomerClick}
-      className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200"
-    >
-      + Add New Customer
-    </button>
-    <button className="w-full border border-gray-300 py-2 rounded mb-2 hover:bg-gray-100">Generate User Report</button>
-    <button className="w-full border border-gray-300 py-2 rounded hover:bg-gray-100">User Permissions</button>
-  </div>
-);
+  return (
+    <div className="bg-white p-4 rounded-lg shadow">
+      <h3 className="text-start font-semibold mb-4">Recent Activity</h3>
+      <ul className="divide-y divide-gray-200">
+        {activities.map((activity, index) => (
+          <li
+            key={index}
+            className="text-start flex items-center justify-between py-3 text-sm"
+          >
+            <div>
+              <p className="text-start font-medium text-gray-800">{activity.action}</p>
+              <p className="text-gray-500">{activity.user}</p>
+            </div>
+            <span className="text-gray-600 text-xs">{activity.time}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
 const CustomerTable = ({ 
   customers, 
@@ -692,7 +685,7 @@ const CustomerTable = ({
   return (
     <div className="space-y-4">
       {/* Table Container with proper scroll */}
-      <div className="overflow-x-auto shadow-sm border border-gray-200 rounded-lg">
+      <div className="shadow-sm border border-gray-200 rounded-lg">
         <table className="w-full table-fixed border-collapse bg-white">
           <thead>
             <tr className="bg-gray-50">

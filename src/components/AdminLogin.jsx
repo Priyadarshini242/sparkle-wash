@@ -72,9 +72,9 @@ export default function AdminLogin() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Admin ID */}
           <div>
-            <label htmlFor="adminId" className="text-sm text-gray-600 font-medium">
+            <p className="text-start text-gray-700 font-medium">
               Admin ID
-            </label>
+            </p>
             <div className="mt-2 flex items-center border border-gray-200 rounded-lg px-3 py-2 bg-white">
               {/* mail icon */}
               <svg
@@ -105,9 +105,9 @@ export default function AdminLogin() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="text-sm text-gray-600 font-medium">
+            <p className="text-start text-gray-700 font-medium">
               Password
-            </label>
+            </p>
             <div className="mt-2 flex items-center border border-gray-200 rounded-lg px-3 py-2 bg-white">
               {/* lock icon */}
               <svg

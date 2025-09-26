@@ -102,7 +102,7 @@ const WasherAuth = () => {
 
             {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="text-start block text-sm font-medium text-gray-700 mb-2">
                 Full Name
               </label>
               <input
@@ -123,7 +123,7 @@ const WasherAuth = () => {
 
             {/* Email Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="text-start block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <input
