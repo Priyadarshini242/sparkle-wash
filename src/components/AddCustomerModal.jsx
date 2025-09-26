@@ -12,7 +12,8 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
     vehicleNo: '',
     packageId: '',
     packageName: '',
-    washerId: ''
+    washerId: '',
+    scheduleType: 'schedule1' // Default to schedule1
   });
   
   const [errors, setErrors] = useState({});
@@ -138,7 +139,8 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
       vehicleNo: '',
       packageId: '',
       packageName: '',
-      washerId: ''
+      washerId: '',
+      scheduleType: 'schedule1' // Reset to default
     });
     setErrors({});
     onClose();
@@ -316,6 +318,51 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
                 </div>
                 {errors.packageId && <p className="text-red-500 text-xs mt-1">{errors.packageId}</p>}
               </div>
+
+              {/* Schedule Selection - Show only if package is selected */}
+              {formData.packageName && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Washing Schedule *
+                  </label>
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="schedule1"
+                        name="scheduleType"
+                        value="schedule1"
+                        checked={formData.scheduleType === 'schedule1'}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <label htmlFor="schedule1" className="ml-2 block text-sm text-gray-700">
+                        {formData.packageName === 'Basic' 
+                          ? 'Monday & Thursday (2 times/week)' 
+                          : 'Monday, Wednesday & Friday (3 times/week)'
+                        }
+                      </label>
+                    </div>
+                    <div className="flex items-center">
+                      <input
+                        type="radio"
+                        id="schedule2"
+                        name="scheduleType"
+                        value="schedule2"
+                        checked={formData.scheduleType === 'schedule2'}
+                        onChange={handleInputChange}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <label htmlFor="schedule2" className="ml-2 block text-sm text-gray-700">
+                        {formData.packageName === 'Basic' 
+                          ? 'Tuesday & Saturday (2 times/week)' 
+                          : 'Tuesday, Thursday & Saturday (3 times/week)'
+                        }
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Washer Selection */}
               <div>

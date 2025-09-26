@@ -113,7 +113,7 @@ const EditCustomerModal = ({ isOpen, onClose, onCustomerUpdated, customer }) => 
       } else {
         const errorData = await response.json();
         console.error('Failed to update customer:', errorData);
-        alert('Failed to update customer. Please try again.');
+        alert('Error: ' + (errorData.message || 'Failed to update customer'));
       }
     } catch (error) {
       console.error('Error updating customer:', error);

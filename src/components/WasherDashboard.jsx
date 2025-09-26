@@ -1,13 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CalendarDaysIcon, BuildingOffice2Icon, FunnelIcon } from '@heroicons/react/24/outline';
 
 const WasherDashboard = () => {
   const [washer, setWasher] = useState(null);
   const [customers, setCustomers] = useState([]);
+  const [apartments, setApartments] = useState([]);
+  const [carTypes, setCarTypes] = useState([]); // New state for car types
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedCustomer, setExpandedCustomer] = useState(null);
   const [completingWash, setCompletingWash] = useState(null);
+  
+  // Filter states
+  const [selectedDate, setSelectedDate] = useState('today');
+  const [selectedApartment, setSelectedApartment] = useState('all');
+  const [selectedCarType, setSelectedCarType] = useState('all'); // New state for car type filter
+  const [showFilters, setShowFilters] = useState(false);
+  
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,18 +31,37 @@ const WasherDashboard = () => {
     const washerData = JSON.parse(washerAuth);
     setWasher(washerData);
     fetchWasherData(washerData._id);
-  }, [navigate]);
+  }, [navigate, selectedDate, selectedApartment, selectedCarType]);
 
-  const fetchWasherData = async (washerId) => {
+  const fetchWasherData = async (washerId, date = selectedDate, apartment = selectedApartment, carType = selectedCarType) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/washer/dashboard/${washerId}`);
+      let url = `http://localhost:5000/api/washer/dashboard/${washerId}`;
+      const params = new URLSearchParams();
+      
+      if (date && date !== 'today') {
+        params.append('date', date);
+      }
+      if (apartment && apartment !== 'all') {
+        params.append('apartment', apartment);
+      }
+      if (carType && carType !== 'all') {
+        params.append('carType', carType);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await fetch(url);
       
       if (response.ok) {
         const data = await response.json();
         // Update washer data with the response
         setWasher(data.washer);
         setCustomers(data.customers || []);
+        setApartments(data.apartments || []);
+        setCarTypes(data.carTypes || []); // Set car types from response
       } else {
         throw new Error('Failed to fetch washer data');
       }
@@ -92,6 +121,39 @@ const WasherDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem('washerAuth');
     navigate('/washer');
+  };
+
+  const handleDateFilter = (date) => {
+    setSelectedDate(date);
+    setExpandedCustomer(null); // Close any expanded customer
+  };
+
+  const handleApartmentFilter = (apartment) => {
+    setSelectedApartment(apartment);
+    setExpandedCustomer(null); // Close any expanded customer
+  };
+
+  const handleCarTypeFilter = (carType) => {
+    setSelectedCarType(carType);
+    setExpandedCustomer(null); // Close any expanded customer
+  };
+
+  // Get next few days for date filter
+  const getDateOptions = () => {
+    const options = [
+      { value: 'today', label: 'Today' },
+      { value: 'all', label: 'All Scheduled' }
+    ];
+    
+    for (let i = 1; i <= 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() + i);
+      const dateStr = date.toISOString().split('T')[0];
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      options.push({ value: dateStr, label: dayName });
+    }
+    
+    return options;
   };
 
   if (loading) {
@@ -204,6 +266,99 @@ const WasherDashboard = () => {
           </div>
         </div>
 
+        {/* Filters Section */}
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-md font-medium text-gray-900">Filter Customers</h3>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-md hover:bg-gray-50"
+              >
+                <FunnelIcon className="h-4 w-4" />
+                <span>{showFilters ? 'Hide Filters' : 'Show Filters'}</span>
+              </button>
+            </div>
+          </div>
+          
+          {showFilters && (
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Date Filter */}
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <CalendarDaysIcon className="h-4 w-4" />
+                    <span>Filter by Date</span>
+                  </label>
+                  <select
+                    value={selectedDate}
+                    onChange={(e) => handleDateFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {getDateOptions().map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Apartment Filter */}
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <BuildingOffice2Icon className="h-4 w-4" />
+                    <span>Filter by Apartment</span>
+                  </label>
+                  <select
+                    value={selectedApartment}
+                    onChange={(e) => handleApartmentFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Apartments</option>
+                    {apartments.map((apartment) => (
+                      <option key={apartment} value={apartment}>
+                        {apartment}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Car Type Filter */}
+                <div>
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                    </svg>
+                    <span>Filter by Car Type</span>
+                  </label>
+                  <select
+                    value={selectedCarType}
+                    onChange={(e) => handleCarTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="all">All Car Types</option>
+                    <option value="sedan">Sedan</option>
+                    <option value="suv">SUV</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Filter Results Info */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                <p className="text-sm text-blue-700">
+                  Showing {customers.length} customer{customers.length !== 1 ? 's' : ''} 
+                  {selectedDate !== 'today' && selectedDate !== 'all' && (
+                    <span> scheduled for {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+                  )}
+                  {selectedDate === 'today' && <span> who need wash today</span>}
+                  {selectedApartment !== 'all' && <span> in {selectedApartment}</span>}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Customers List */}
         <div className="bg-white rounded-lg shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200">
@@ -232,9 +387,17 @@ const WasherDashboard = () => {
                         </div>
                         <div>
                           <h3 className="text-lg font-medium text-gray-900">{customer.name}</h3>
-                          <p className="text-sm text-gray-500">
-                            {customer.apartment} • {customer.pendingWashes || 0} washes pending
-                          </p>
+                          <div className="flex flex-col space-y-1">
+                            <p className="text-sm text-gray-500">
+                              {customer.apartment} • {customer.pendingWashes || 0} washes pending
+                            </p>
+                            {customer.washingDayNames && customer.washingDayNames.length > 0 && (
+                              <p className="text-xs text-blue-600">
+                                Schedule: {customer.washingDayNames.join(', ')}
+                                {customer.needsWashToday && <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full">Due Today</span>}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex space-x-3">
@@ -332,6 +495,10 @@ const WasherDashboard = () => {
                               <div>
                                 <label className="text-sm font-medium text-gray-500">Car Model</label>
                                 <p className="text-sm text-gray-900">{customer.carModel || 'Not provided'}</p>
+                              </div>
+                              <div>
+                                <label className="text-sm font-medium text-gray-500">Car Type</label>
+                                <p className="text-sm text-gray-900 capitalize">{customer.carType || 'Not specified'}</p>
                               </div>
                             </div>
                           </div>

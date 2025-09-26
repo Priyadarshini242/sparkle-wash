@@ -5,6 +5,7 @@ import { FaEdit, FaTrash, FaTimes } from "react-icons/fa";
 import { BellIcon } from "@heroicons/react/24/outline";
 import AddCustomerModal from "./AddCustomerModal";
 import EditCustomerModal from "./EditCustomerModal";
+import BulkOperationsModal from "./BulkOperationsModal";
 import ContextMenu from "./ContextMenu";
 import CustomerHistoryModal from "./CustomerHistoryModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
@@ -23,6 +24,7 @@ function Usermanagement() {
   const [packageFilter, setPackageFilter] = useState("");
   const [carModelFilter, setCarModelFilter] = useState("");
   const [apartmentFilter, setApartmentFilter] = useState("");
+  const [carTypeFilter, setCarTypeFilter] = useState(""); // Add car type filter
   
   // Modal state
   const [isAddCustomerModalOpen, setIsAddCustomerModalOpen] = useState(false);
@@ -51,6 +53,9 @@ function Usermanagement() {
   // Washer allocation modal state
   const [isWasherAllocationModalOpen, setIsWasherAllocationModalOpen] = useState(false);
   const [customerToAllocate, setCustomerToAllocate] = useState(null);
+  
+  // Bulk operations modal state
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -109,10 +114,10 @@ function Usermanagement() {
       customer.apartment?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesPackage = !packageFilter || customer.packageName === packageFilter; // Use packageName
-    const matchesCarModel = !carModelFilter || customer.carModel === carModelFilter;
     const matchesApartment = !apartmentFilter || customer.apartment === apartmentFilter;
+    const matchesCarType = !carTypeFilter || customer.carType === carTypeFilter; // Add car type filter
     
-    return matchesSearch && matchesPackage && matchesCarModel && matchesApartment;
+    return matchesSearch && matchesPackage && matchesApartment && matchesCarType;
   });
 
   // Pagination logic
@@ -124,14 +129,14 @@ function Usermanagement() {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, packageFilter, carModelFilter, apartmentFilter]);
+  }, [searchTerm, packageFilter, apartmentFilter, carTypeFilter]);
 
   // Clear all filters
   const clearFilters = () => {
     setSearchTerm("");
     setPackageFilter("");
-    setCarModelFilter("");
     setApartmentFilter("");
+    setCarTypeFilter(""); // Clear car type filter
     setCurrentPage(1);
   };
 
@@ -272,34 +277,36 @@ function Usermanagement() {
   };
 
   return (
-
-    <div className="flex h-screen w-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
-    {/* Main Content */}
-      <main className="flex-1 bg-white p-10 overflow-auto">
-      {/*Tob Header */}
-      <header className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">User Management</h1>
-          <p className="text-gray-500 text-start text-sm">Friday, June 30, 2023</p>
-        </div>
-         {/* Notifications + Button */}
-        <div className="flex items-center gap-4">
-          {/* Notification Bell */}
-          <div className="relative">
-            <BellIcon className="h-6 w-6 text-gray-600" />
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
-              3
-            </span>
-          </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 overflow-auto">
+          <div className="p-6">
+            {/*Top Header */}
+            <header className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-2xl font-bold">User Management</h1>
+                <p className="text-gray-500 text-start text-sm">Friday, June 30, 2023</p>
+              </div>
+               {/* Notifications + Button */}
+              <div className="flex items-center gap-4">
+                {/* Notification Bell */}
+                <div className="relative">
+                  <BellIcon className="h-6 w-6 text-gray-600" />
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    3
+                  </span>
+                </div>
 
-          {/* View Schedule Button */}
-          <button className="bg-yellow-400 hover:bg-yellow-500 text-blue font-semibold px-5 py-2 rounded-lg shadow-md">
-            Export User
-          </button>
-        </div>
-      </header>
+                {/* View Schedule Button */}
+                <button className="bg-yellow-400 hover:bg-yellow-500 text-blue font-semibold px-5 py-2 rounded-lg shadow-md">
+                  Export User
+                </button>
+              </div>
+            </header>
 
       {/* Tabs */}
       <div className="border-b mb-6">
@@ -328,10 +335,10 @@ function Usermanagement() {
       </div>
 
       {/* Summary + Activity + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <UserSummary customers={customers} />
         <RecentActivity />
-        {/* <QuickActions onAddCustomerClick={() => setIsAddCustomerModalOpen(true)} /> */}
+        <QuickActions onAddCustomerClick={() => setIsAddCustomerModalOpen(true)} />
       </div>
 
       {/* Table section */}
@@ -379,19 +386,6 @@ function Usermanagement() {
                   </option>
                 ))}
               </select>
-              
-              <select 
-                value={carModelFilter}
-                onChange={(e) => setCarModelFilter(e.target.value)}
-                className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Car Models</option>
-                {uniqueCarModels.map(carModel => (
-                  <option key={carModel} value={carModel}>
-                    {carModel}
-                  </option>
-                ))}
-              </select>
 
               <select 
                 value={apartmentFilter}
@@ -405,15 +399,26 @@ function Usermanagement() {
                   </option>
                 ))}
               </select>
+
+              <select 
+                value={carTypeFilter}
+                onChange={(e) => setCarTypeFilter(e.target.value)}
+                className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Car Types</option>
+                <option value="sedan">Sedan</option>
+                <option value="suv">SUV</option>
+                <option value="premium">Premium</option>
+              </select>
               
               <div className="flex gap-2">
-                {/* <button 
+                <button 
                   onClick={fetchCustomers}
                   className="border border-blue-500 text-blue-500 rounded px-4 py-2 hover:bg-blue-50 transition-colors"
                   disabled={loading}
                 >
                   {loading ? 'Loading...' : 'Refresh'}
-                </button> */}
+                </button>
                 
                 <button 
                   onClick={clearFilters}
@@ -421,6 +426,17 @@ function Usermanagement() {
                   title="Clear all filters"
                 >
                   Clear Filters
+                </button>
+                
+                <button 
+                  onClick={() => setIsBulkModalOpen(true)}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors flex items-center space-x-2"
+                  title="Export template or bulk import customers"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Bulk Operations</span>
                 </button>
                 
                 <button 
@@ -435,15 +451,15 @@ function Usermanagement() {
         )}
 
         {/* Active Filters Summary */}
-        {!loading && (searchTerm || packageFilter || carModelFilter || apartmentFilter) && (
+        {!loading && (searchTerm || packageFilter || apartmentFilter || carTypeFilter) && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center justify-between">
               <div className="text-sm text-blue-800">
                 <strong>Active Filters:</strong>
                 {searchTerm && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Search: "{searchTerm}"</span>}
                 {packageFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Package: {packageFilter}</span>}
-                {carModelFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Car: {carModelFilter}</span>}
                 {apartmentFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Apartment: {apartmentFilter}</span>}
+                {carTypeFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Type: {carTypeFilter}</span>}
                 <span className="ml-2 text-blue-600">({filteredCustomers.length} results)</span>
               </div>
               <button 
@@ -537,7 +553,15 @@ function Usermanagement() {
         onWasherAllocated={handleWasherAllocated}
         customer={customerToAllocate}
       />
-    </main>
+
+      {/* Bulk Operations Modal */}
+      <BulkOperationsModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+      />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -553,8 +577,8 @@ const UserSummary = ({ customers = [] }) => {
   const inactivePercentage = totalUsers ? (inactiveUsers / totalUsers) * 100 : 0;
 
   return (
-    <div className="bg-white p-9 rounded shadow">
-      <h3 className="font-medium  text-start text-gray-800">User Summary</h3>
+    <div className="bg-white p-4 rounded shadow">
+      <h3 className="font-semibold mb-4">User Summary</h3>
       <div className="mb-4">
         <div className="flex justify-between mb-1 text-sm">
           <span>Active Users</span>
@@ -597,7 +621,7 @@ const UserSummary = ({ customers = [] }) => {
 
 const RecentActivity = () => (
   <div className="bg-white p-4 rounded shadow">
-    <h3 className="font-medium  text-start text-gray-800">Recent Activity</h3>
+    <h3 className="font-semibold mb-4">Recent Activity</h3>
     <ul className="space-y-3 text-sm text-gray-600">
       <li><span className="font-bold">10 mins ago:</span> User Created - Alex Johnson</li>
       <li><span className="font-bold">25 mins ago:</span> Status Changed - Sarah Miller</li>
@@ -606,19 +630,19 @@ const RecentActivity = () => (
   </div>
 );
 
-// const QuickActions = ({ onAddCustomerClick }) => (
-//   <div className="bg-white p-4 rounded shadow">
-//     <h3 className="font-semibold mb-4">Quick Actions</h3>
-//     <button 
-//       onClick={onAddCustomerClick}
-//       className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200"
-//     >
-//       + Add New Customer
-//     </button>
-//     <button className="w-full border border-gray-300 py-2 rounded mb-2 hover:bg-gray-100">Generate User Report</button>
-//     <button className="w-full border border-gray-300 py-2 rounded hover:bg-gray-100">User Permissions</button>
-//   </div>
-// );
+const QuickActions = ({ onAddCustomerClick }) => (
+  <div className="bg-white p-4 rounded shadow">
+    <h3 className="font-semibold mb-4">Quick Actions</h3>
+    <button 
+      onClick={onAddCustomerClick}
+      className="w-full bg-blue-100 text-blue-700 py-2 rounded mb-2 hover:bg-blue-200"
+    >
+      + Add New Customer
+    </button>
+    <button className="w-full border border-gray-300 py-2 rounded mb-2 hover:bg-gray-100">Generate User Report</button>
+    <button className="w-full border border-gray-300 py-2 rounded hover:bg-gray-100">User Permissions</button>
+  </div>
+);
 
 const CustomerTable = ({ 
   customers, 
@@ -679,13 +703,14 @@ const CustomerTable = ({
               <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Door No</th>
               <th className="w-24 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
               <th className="w-28 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Car Model</th>
+              <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Car Type</th>
+              <th className="w-32 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Washing Schedule</th>
               <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
               <th className="w-28 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle No</th>
               <th className="w-24 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
               <th className="w-24 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
               <th className="w-20 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pending</th>
               <th className="w-20 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -730,6 +755,32 @@ const CustomerTable = ({
                 <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900 truncate" title={customer.carModel}>
                   {customer.carModel || 'N/A'}
                 </td>
+                <td className="px-4 py-3 border-b border-gray-100">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                    customer.carType === 'sedan' ? 'bg-blue-100 text-blue-800' :
+                    customer.carType === 'suv' ? 'bg-green-100 text-green-800' :
+                    customer.carType === 'premium' ? 'bg-purple-100 text-purple-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {customer.carType || 'N/A'}
+                  </span>
+                </td>
+                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900">
+                  {(() => {
+                    if (!customer?.washingSchedule) return 'N/A';
+                    
+                    const { scheduleType } = customer.washingSchedule;
+                    const packageName = customer.packageName;
+                    
+                    if (scheduleType === 'schedule1') {
+                      return packageName === 'Basic' ? 'Mon, Thu' : 'Mon, Wed, Fri';
+                    } else if (scheduleType === 'schedule2') {
+                      return packageName === 'Basic' ? 'Tue, Sat' : 'Tue, Thu, Sat';
+                    } else {
+                      return 'Custom';
+                    }
+                  })()}
+                </td>
                 <td className="px-4 py-3 border-b border-gray-100 text-sm font-semibold text-green-600">
                   {formatPrice(customer.price)}
                 </td>
@@ -755,22 +806,6 @@ const CustomerTable = ({
                   }`}>
                     {customer.completedWashes || 0}
                   </span>
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-center">
-                  <div className="flex items-center justify-center space-x-2">
-                    <button 
-                      className="text-blue-600 hover:text-blue-800 p-1 hover:bg-blue-50 rounded"
-                      title="Edit Customer"
-                    >
-                      <FaEdit size={14} />
-                    </button>
-                    <button 
-                      className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded"
-                      title="Delete Customer"
-                    >
-                      <FaTrash size={14} />
-                    </button>
-                  </div>
                 </td>
               </tr>
             ))}
@@ -833,7 +868,6 @@ const CustomerTable = ({
         </div>
       </div>
     </div>
-    
   );
 };
 
