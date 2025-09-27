@@ -10,6 +10,7 @@ import ContextMenu from "./ContextMenu";
 import CustomerHistoryModal from "./CustomerHistoryModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import WasherAllocationModal from "./WasherAllocationModal";
+import WasherManagement from "./WasherManagement";
 import Sidebar from "./Sidebar";
 
 // API Configuration
@@ -307,17 +308,17 @@ function Usermanagement() {
               </div>
             </header>
 
-      {/* Tabs */}
-      <div className="border-b mb-6">
-        <nav className="flex space-x-6">
-          <button
-            onClick={() => setActiveTab("customers")}
-            className={`pb-2 ${
-              activeTab === "customers"
-                ? "border-b-2 border-blue-600 text-blue-600"
-                : "text-gray-500"
-            }`}
-          >
+          {/* Tabs */}
+         <div className="border-b mb-6">
+            <nav className="flex space-x-6">
+              <button
+                onClick={() => setActiveTab("customers")}
+                className={`pb-2 ${
+                  activeTab === "customers"
+                    ? "border-b-2 border-blue-600 text-blue-600"
+                    : "text-gray-500"
+                }`}
+              >
             Customer Management
           </button>
           <button
@@ -330,8 +331,16 @@ function Usermanagement() {
           >
             Washing Person Management
           </button>
-        </nav>
-      </div>
+           </nav>
+     </div>
+
+        {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading customers...</span>
+        </div>
+      )}
 
       {/* Summary + Activity + Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

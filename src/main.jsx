@@ -10,6 +10,7 @@ import Usermanagement from "./components/Usermanagement.jsx";
 import SidebarDashboard from "./components/SidebarDashboard.jsx";
 import WasherAuth from "./components/WasherAuth.jsx";
 import WasherDashboard from "./components/WasherDashboard.jsx";
+import WasherManagement from "./components/WasherManagement.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
 import "./index.css"; 
 
@@ -34,6 +35,11 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         {/* Washer Routes */}
         <Route path="/washer" element={<WasherAuth />} />
         <Route path="/washer/dashboard" element={<WasherDashboard />} />
+
+        <Route path="/washermanagement" element={<WasherManagement />} />
+
+
+
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
