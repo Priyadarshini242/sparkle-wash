@@ -14,11 +14,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom"; // ✅ useNav
 const items = [
   { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route: "/dashboard" },
   { id: "customer", label: "Customer", Icon: UserIcon, route: "/admin" },
-  { id: "washer", label: "Washer", Icon: UserIcon, route: "/washermanagement" },
+  { id: "washer-management", label: "Washer", Icon: UserIcon, route: "/washermanagement" },
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route: "/jobs" },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon, route: "/earning" },
   { id: "profile", label: "Profile", Icon: UserIcon, route: "/profile" },
-  { id: "washer", label: "Washer Portal", Icon: WrenchScrewdriverIcon, route: "/washer" },
+  { id: "washer-portal", label: "Washer Portal", Icon: WrenchScrewdriverIcon, route: "/washer" },
   { id: "help", label: "Help & Support", Icon: QuestionMarkCircleIcon, route: "/help" },
 ];
 

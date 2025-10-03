@@ -68,13 +68,19 @@ const EditCustomerModal = ({ isOpen, onClose, onCustomerUpdated, customer }) => 
   const validateForm = () => {
     const newErrors = {};
     
+    // Basic customer info validation
     if (!formData.name.trim()) newErrors.name = 'Name is required';
     if (!formData.mobileNo.trim()) newErrors.mobileNo = 'Mobile number is required';
     if (!formData.apartment.trim()) newErrors.apartment = 'Apartment is required';
     if (!formData.doorNo.trim()) newErrors.doorNo = 'Door number is required';
-    if (!formData.carModel.trim()) newErrors.carModel = 'Car model is required';
-    if (!formData.vehicleNo.trim()) newErrors.vehicleNo = 'Vehicle number is required';
-    if (!formData.packageId) newErrors.packageId = 'Package selection is required';
+    
+    // Only validate single-vehicle fields if this is a single-vehicle customer
+    const isMultiVehicleCustomer = customer?.vehicles && customer.vehicles.length > 0;
+    if (!isMultiVehicleCustomer) {
+      if (!formData.carModel.trim()) newErrors.carModel = 'Car model is required';
+      if (!formData.vehicleNo.trim()) newErrors.vehicleNo = 'Vehicle number is required';
+      if (!formData.packageId) newErrors.packageId = 'Package selection is required';
+    }
     
     // Mobile number validation (10 digits)
     if (formData.mobileNo && !/^\d{10}$/.test(formData.mobileNo)) {
@@ -142,7 +148,7 @@ const EditCustomerModal = ({ isOpen, onClose, onCustomerUpdated, customer }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -258,64 +264,86 @@ const EditCustomerModal = ({ isOpen, onClose, onCustomerUpdated, customer }) => 
               {errors.doorNo && <p className="text-red-500 text-xs mt-1">{errors.doorNo}</p>}
             </div>
 
-            {/* Car Model */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Car Model *
-              </label>
-              <input
-                type="text"
-                name="carModel"
-                value={formData.carModel}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.carModel ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="e.g., Honda City, Maruti Swift"
-              />
-              {errors.carModel && <p className="text-red-500 text-xs mt-1">{errors.carModel}</p>}
-            </div>
+            {/* Single Vehicle Fields - Only show for single-vehicle customers */}
+            {(!customer?.vehicles || customer.vehicles.length === 0) && (
+              <>
+                {/* Car Model */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Car Model *
+                  </label>
+                  <input
+                    type="text"
+                    name="carModel"
+                    value={formData.carModel}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.carModel ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., Honda City, Maruti Swift"
+                  />
+                  {errors.carModel && <p className="text-red-500 text-xs mt-1">{errors.carModel}</p>}
+                </div>
 
-            {/* Vehicle Number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vehicle Number *
-              </label>
-              <input
-                type="text"
-                name="vehicleNo"
-                value={formData.vehicleNo}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  errors.vehicleNo ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="e.g., KA 01 AB 1234"
-                style={{ textTransform: 'uppercase' }}
-              />
-              {errors.vehicleNo && <p className="text-red-500 text-xs mt-1">{errors.vehicleNo}</p>}
-            </div>
+                {/* Vehicle Number */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Vehicle Number *
+                  </label>
+                  <input
+                    type="text"
+                    name="vehicleNo"
+                    value={formData.vehicleNo}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.vehicleNo ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    placeholder="e.g., KA 01 AB 1234"
+                    style={{ textTransform: 'uppercase' }}
+                  />
+                  {errors.vehicleNo && <p className="text-red-500 text-xs mt-1">{errors.vehicleNo}</p>}
+                </div>
+              </>
+            )}
+
+            {/* Multi-vehicle info message */}
+            {customer?.vehicles && customer.vehicles.length > 0 && (
+              <div className="col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <svg className="h-5 w-5 text-blue-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-blue-800 font-medium">
+                    This customer has {customer.vehicles.length} vehicle{customer.vehicles.length > 1 ? 's' : ''}. 
+                    Vehicle details can be managed from the Customer Details page.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Package Selection */}
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Package *
-            </label>
-            <button
-              type="button"
-              onClick={() => setIsPackageModalOpen(true)}
-              className={`w-full px-3 py-2 border rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.packageId ? 'border-red-300' : 'border-gray-300'
-              } ${formData.packageName ? 'bg-blue-50' : 'bg-white'}`}
-            >
-              {formData.packageName ? (
-                <span className="text-blue-700 font-medium">{formData.packageName}</span>
-              ) : (
-                <span className="text-gray-500">Click to select package</span>
-              )}
-            </button>
-            {errors.packageId && <p className="text-red-500 text-xs mt-1">{errors.packageId}</p>}
-          </div>
+          {/* Package Selection - Only show for single-vehicle customers */}
+          {(!customer?.vehicles || customer.vehicles.length === 0) && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Package *
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsPackageModalOpen(true)}
+                className={`w-full px-3 py-2 border rounded-lg text-left focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  errors.packageId ? 'border-red-300' : 'border-gray-300'
+                } ${formData.packageName ? 'bg-blue-50' : 'bg-white'}`}
+              >
+                {formData.packageName ? (
+                  <span className="text-blue-700 font-medium">{formData.packageName}</span>
+                ) : (
+                  <span className="text-gray-500">Click to select package</span>
+                )}
+              </button>
+              {errors.packageId && <p className="text-red-500 text-xs mt-1">{errors.packageId}</p>}
+            </div>
+          )}
         </form>
 
         {/* Footer */}
