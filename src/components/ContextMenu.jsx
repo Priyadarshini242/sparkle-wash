@@ -1,11 +1,9 @@
 import React from 'react';
 import { 
   EyeIcon, 
-  PencilIcon, 
   TrashIcon,
   ClockIcon,
-  XMarkIcon,
-  UserPlusIcon
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 const ContextMenu = ({ 
@@ -14,9 +12,7 @@ const ContextMenu = ({
   y, 
   onClose, 
   onViewHistory, 
-  onEdit, 
   onDelete,
-  onAllocateWasher,
   customer 
 }) => {
   if (!isVisible) return null;
@@ -26,18 +22,8 @@ const ContextMenu = ({
     onClose();
   };
 
-  const handleEdit = () => {
-    onEdit(customer);
-    onClose();
-  };
-
   const handleDelete = () => {
     onDelete(customer);
-    onClose();
-  };
-
-  const handleAllocateWasher = () => {
-    onAllocateWasher(customer);
     onClose();
   };
 
@@ -78,22 +64,6 @@ const ContextMenu = ({
           >
             <ClockIcon className="h-4 w-4 mr-3" />
             View History
-          </button>
-          
-          <button
-            onClick={handleEdit}
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 w-full text-left transition-colors"
-          >
-            <PencilIcon className="h-4 w-4 mr-3" />
-            Edit Customer
-          </button>
-          
-          <button
-            onClick={handleAllocateWasher}
-            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 w-full text-left transition-colors"
-          >
-            <UserPlusIcon className="h-4 w-4 mr-3" />
-            Allocate Washer
           </button>
           
           <hr className="my-1 border-gray-100" />

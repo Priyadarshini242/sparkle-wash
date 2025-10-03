@@ -57,6 +57,10 @@ const WasherDashboard = () => {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Washer Dashboard data received:', data); // Debug log
+        console.log('🔍 Customers array:', data.customers); // Debug log
+        console.log('🔍 Sample customer:', data.customers?.[0]); // Debug log
+        
         // Update washer data with the response
         setWasher(data.washer);
         setCustomers(data.customers || []);
@@ -360,8 +364,12 @@ const WasherDashboard = () => {
             </div>
           ) : (
             <div className="divide-y divide-gray-200">
-              {customers.map((customer) => (
-                <div key={customer._id} className="p-6">
+              {customers.map((customer) => {
+                // Debug log for each customer
+                console.log(`🔍 Rendering customer:`, customer);
+                
+                return (
+                  <div key={customer._id} className="p-6">
                   {/* Simple View */}
                   {expandedCustomer !== customer._id ? (
                     <div className="flex items-center justify-between">
@@ -372,13 +380,27 @@ const WasherDashboard = () => {
                           </span>
                         </div>
                         <div>
-                          <h3 className="text-lg font-medium text-gray-900">{customer.name}</h3>
+                          <h3 className="text-lg font-medium text-gray-900">
+                            {customer.name || customer.customerName || 'Unknown Customer'}
+                          </h3>
                           <div className="flex flex-col space-y-1">
                             <p className="text-sm text-gray-500">
                               {customer.apartment} • {customer.pendingWashes || 0} washes pending
                             </p>
+                            {/* Vehicle Information */}
+                            {customer.vehicleNo && customer.carModel && (
+                              <p className="text-sm text-blue-600">
+                                🚗 {customer.vehicleNo} ({customer.carModel})
+                                {customer.assignmentType === 'vehicle-level' && (
+                                  <span className="ml-2 px-1.5 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">Vehicle</span>
+                                )}
+                                {customer.assignmentType === 'customer-level' && (
+                                  <span className="ml-2 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded">Customer</span>
+                                )}
+                              </p>
+                            )}
                             {customer.washingDayNames && customer.washingDayNames.length > 0 && (
-                              <p className="text-xs text-blue-600">
+                              <p className="text-xs text-green-600">
                                 Schedule: {customer.washingDayNames.join(', ')}
                                 {customer.needsWashToday && <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 rounded-full">Due Today</span>}
                               </p>
@@ -421,11 +443,13 @@ const WasherDashboard = () => {
                         <div className="flex items-center space-x-4">
                           <div className="h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
                             <span className="text-indigo-600 font-semibold">
-                              {customer.name?.charAt(0)?.toUpperCase() || 'C'}
+                              {(customer.name || customer.customerName)?.charAt(0)?.toUpperCase() || 'C'}
                             </span>
                           </div>
                           <div>
-                            <h3 className="text-lg font-medium text-gray-900">{customer.name}</h3>
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {customer.name || customer.customerName || 'Unknown Customer'}
+                            </h3>
                             <p className="text-sm text-gray-500">Complete customer details</p>
                           </div>
                         </div>
@@ -486,6 +510,19 @@ const WasherDashboard = () => {
                                 <label className="text-sm font-medium text-gray-500">Car Type</label>
                                 <p className="text-sm text-gray-900 capitalize">{customer.carType || 'Not specified'}</p>
                               </div>
+                              {/* Assignment Type for Multi-Vehicle Customers */}
+                              {customer.assignmentType && (
+                                <div>
+                                  <label className="text-sm font-medium text-gray-500">Assignment Type</label>
+                                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                    customer.assignmentType === 'vehicle-level' 
+                                      ? 'bg-blue-100 text-blue-800' 
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {customer.assignmentType === 'vehicle-level' ? 'Individual Vehicle' : 'Customer Level'}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
 
@@ -545,7 +582,8 @@ const WasherDashboard = () => {
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -8,6 +8,9 @@ import EditCustomerModal from "./EditCustomerModal";
 import BulkOperationsModal from "./BulkOperationsModal";
 import ContextMenu from "./ContextMenu";
 import CustomerHistoryModal from "./CustomerHistoryModal";
+import CustomerDetailsModal from "./CustomerDetailsModal";
+import AddVehicleModal from "./AddVehicleModal";
+import EditVehicleModal from "./EditVehicleModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
 import WasherAllocationModal from "./WasherAllocationModal";
 import Sidebar from "./Sidebar";
@@ -47,6 +50,16 @@ function Usermanagement() {
   
   // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // Customer details modal state
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [customerForDetails, setCustomerForDetails] = useState(null);
+
+  // Vehicle management modal states
+  const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
+  const [isEditVehicleModalOpen, setIsEditVehicleModalOpen] = useState(false);
+  const [vehicleToEdit, setVehicleToEdit] = useState(null);
+  const [customerForVehicleAction, setCustomerForVehicleAction] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -61,14 +74,32 @@ function Usermanagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Items per page
 
-  // Get unique values from customers data
+  // Get unique values from customers data (updated for multi-vehicle)
   const uniqueCarModels = [...new Set(customers
-    .map(customer => customer.carModel)
+    .flatMap(customer => {
+      if (customer.hasMultipleVehicles && customer.vehicles) {
+        return customer.vehicles.map(vehicle => vehicle.carModel);
+      } else if (customer.carModel) {
+        return [customer.carModel];
+      } else if (customer.vehicles && customer.vehicles.length > 0) {
+        return [customer.vehicles[0].carModel];
+      }
+      return [];
+    })
     .filter(carModel => carModel && carModel.trim() !== "" && carModel !== "N/A")
   )].sort();
 
   const uniquePackages = [...new Set(customers
-    .map(customer => customer.packageName) // Use packageName instead of packageId?.name
+    .flatMap(customer => {
+      if (customer.hasMultipleVehicles && customer.vehicles) {
+        return customer.vehicles.map(vehicle => vehicle.packageName);
+      } else if (customer.packageName) {
+        return [customer.packageName];
+      } else if (customer.vehicles && customer.vehicles.length > 0) {
+        return [customer.vehicles[0].packageName];
+      }
+      return [];
+    })
     .filter(packageName => packageName && packageName.trim() !== "" && packageName !== "N/A")
   )].sort();
 
@@ -104,20 +135,42 @@ function Usermanagement() {
     fetchCustomers();
   }, []);
 
-  // Filter customers based on search and filters
+  // Filter customers based on search and filters (updated for multi-vehicle)
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = !searchTerm || 
       customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.mobileNo?.includes(searchTerm) ||
       customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.apartment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      // Search in vehicle data
+      (customer.vehicles && customer.vehicles.some(vehicle => 
+        vehicle.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehicle.carModel?.toLowerCase().includes(searchTerm.toLowerCase())
+      )) ||
+      // Backward compatibility search
       customer.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.apartment?.toLowerCase().includes(searchTerm.toLowerCase());
+      customer.carModel?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesPackage = !packageFilter || customer.packageName === packageFilter; // Use packageName
+    const matchesPackage = !packageFilter || 
+      // Check in vehicles array
+      (customer.vehicles && customer.vehicles.some(vehicle => vehicle.packageName === packageFilter)) ||
+      // Backward compatibility
+      customer.packageName === packageFilter;
+    
+    const matchesCarModel = !carModelFilter ||
+      // Check in vehicles array
+      (customer.vehicles && customer.vehicles.some(vehicle => vehicle.carModel === carModelFilter)) ||
+      // Backward compatibility
+      customer.carModel === carModelFilter;
+    
     const matchesApartment = !apartmentFilter || customer.apartment === apartmentFilter;
-    const matchesCarType = !carTypeFilter || customer.carType === carTypeFilter; // Add car type filter
+    const matchesCarType = !carTypeFilter || 
+      // Check in vehicles array
+      (customer.vehicles && customer.vehicles.some(vehicle => vehicle.carType === carTypeFilter)) ||
+      // Backward compatibility
+      customer.carType === carTypeFilter;
     
-    return matchesSearch && matchesPackage && matchesApartment && matchesCarType;
+    return matchesSearch && matchesPackage && matchesCarModel && matchesApartment && matchesCarType;
   });
 
   // Pagination logic
@@ -246,6 +299,89 @@ function Usermanagement() {
     setIsWasherAllocationModalOpen(false);
     setCustomerToAllocate(null);
     console.log('Washer allocated successfully:', updatedCustomer);
+  };
+
+  const handleViewDetails = (customer) => {
+    setCustomerForDetails(customer);
+    setIsDetailsModalOpen(true);
+  };
+
+  // Vehicle management handlers
+  const handleEditVehicle = (vehicle) => {
+    console.log('Edit vehicle:', vehicle);
+    setVehicleToEdit(vehicle);
+    setCustomerForVehicleAction(customerForDetails);
+    setIsEditVehicleModalOpen(true);
+  };
+
+  const handleDeleteVehicle = async (vehicle) => {
+    console.log('Delete vehicle:', vehicle);
+    if (confirm(`Are you sure you want to delete vehicle ${vehicle.vehicleNo}?`)) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/customer/${customerForDetails._id}/vehicles/${vehicle._id}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Update the customer details
+          setCustomerForDetails(result.customer);
+          // Update the customers list
+          setCustomers(prevCustomers => 
+            prevCustomers.map(customer => 
+              customer._id === result.customer._id ? result.customer : customer
+            )
+          );
+          alert('Vehicle deleted successfully');
+        } else {
+          const errorData = await response.json();
+          alert('Error: ' + (errorData.message || 'Failed to delete vehicle'));
+        }
+      } catch (error) {
+        console.error('Error deleting vehicle:', error);
+        alert('Network error occurred. Please try again.');
+      }
+    }
+  };
+
+  const handleAddVehicle = (customer) => {
+    console.log('Add vehicle for customer:', customer);
+    setCustomerForVehicleAction(customer);
+    setIsAddVehicleModalOpen(true);
+  };
+
+  const handleEditCustomerDetails = (customer) => {
+    console.log('Edit customer:', customer);
+    setCustomerToEdit(customer);
+    setIsEditModalOpen(true);
+  };
+
+  // Vehicle modal handlers
+  const handleVehicleAdded = (updatedCustomer) => {
+    // Update the customer details
+    setCustomerForDetails(updatedCustomer);
+    // Update the customers list
+    setCustomers(prevCustomers => 
+      prevCustomers.map(customer => 
+        customer._id === updatedCustomer._id ? updatedCustomer : customer
+      )
+    );
+    setIsAddVehicleModalOpen(false);
+    setCustomerForVehicleAction(null);
+  };
+
+  const handleVehicleUpdated = (updatedCustomer) => {
+    // Update the customer details
+    setCustomerForDetails(updatedCustomer);
+    // Update the customers list
+    setCustomers(prevCustomers => 
+      prevCustomers.map(customer => 
+        customer._id === updatedCustomer._id ? updatedCustomer : customer
+      )
+    );
+    setIsEditVehicleModalOpen(false);
+    setVehicleToEdit(null);
+    setCustomerForVehicleAction(null);
   };
 
   const confirmDeleteCustomer = async (customerId) => {
@@ -476,6 +612,7 @@ function Usermanagement() {
             goToNextPage={goToNextPage}
             goToPrevPage={goToPrevPage}
             onContextMenu={handleContextMenu}
+            onViewDetails={handleViewDetails}
           />
         )}
       </div>
@@ -494,9 +631,7 @@ function Usermanagement() {
         y={contextMenu.y}
         onClose={closeContextMenu}
         onViewHistory={handleViewHistory}
-        onEdit={handleEditCustomer}
         onDelete={handleDeleteCustomer}
-        onAllocateWasher={handleAllocateWasher}
         customer={contextMenu.customer}
       />
 
@@ -542,6 +677,45 @@ function Usermanagement() {
         }}
         onWasherAllocated={handleWasherAllocated}
         customer={customerToAllocate}
+      />
+
+      {/* Customer Details Modal */}
+      <CustomerDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setCustomerForDetails(null);
+        }}
+        customer={customerForDetails}
+        onCustomerUpdated={fetchCustomers}
+        onEditVehicle={handleEditVehicle}
+        onDeleteVehicle={handleDeleteVehicle}
+        onAddVehicle={handleAddVehicle}
+        onEditCustomer={handleEditCustomerDetails}
+      />
+
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal
+        isOpen={isAddVehicleModalOpen}
+        onClose={() => {
+          setIsAddVehicleModalOpen(false);
+          setCustomerForVehicleAction(null);
+        }}
+        customer={customerForVehicleAction}
+        onVehicleAdded={handleVehicleAdded}
+      />
+
+      {/* Edit Vehicle Modal */}
+      <EditVehicleModal
+        isOpen={isEditVehicleModalOpen}
+        onClose={() => {
+          setIsEditVehicleModalOpen(false);
+          setVehicleToEdit(null);
+          setCustomerForVehicleAction(null);
+        }}
+        customer={customerForVehicleAction}
+        vehicle={vehicleToEdit}
+        onVehicleUpdated={handleVehicleUpdated}
       />
 
       {/* Bulk Operations Modal */}
@@ -648,7 +822,8 @@ const CustomerTable = ({
   goToPage,
   goToNextPage,
   goToPrevPage,
-  onContextMenu
+  onContextMenu,
+  onViewDetails
 }) => {
   if (!customers || customers.length === 0) {
     return (
@@ -685,123 +860,106 @@ const CustomerTable = ({
   return (
     <div className="space-y-4">
       {/* Table Container with proper scroll */}
-      <div className="shadow-sm border border-gray-200 rounded-lg">
-        <table className="w-full table-fixed border-collapse bg-white">
+      <div className="shadow-sm border border-gray-200 rounded-lg overflow-hidden">
+        <table className="w-full border-collapse bg-white">
           <thead>
-            <tr className="bg-gray-50">
-              <th className="w-32 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="w-28 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="w-40 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="w-32 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apartment</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Door No</th>
-              <th className="w-24 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Package</th>
-              <th className="w-28 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Car Model</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Car Type</th>
-              <th className="w-32 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Washing Schedule</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-              <th className="w-28 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle No</th>
-              <th className="w-24 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-              <th className="w-24 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Pending</th>
-              <th className="w-20 border-b border-gray-200 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+            <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+              <th className="border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Customer Name</th>
+              <th className="border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+              <th className="border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mobile No</th>
+              <th className="border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Apartment</th>
+              <th className="border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Door No</th>
+              <th className="border-b border-gray-200 px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {customers.map((customer, index) => (
-              <tr 
-                key={customer._id} 
-                className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'} cursor-pointer`}
-                onContextMenu={(e) => onContextMenu && onContextMenu(e, customer)}
-              >
-                <td className="px-4 py-3 border-b border-gray-100">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-semibold">
-                      {customer.name?.charAt(0)?.toUpperCase() || 'N'}
+          <tbody className="divide-y divide-gray-200">
+            {customers.map((customer, index) => {
+              // Determine if customer has multiple vehicles
+              const hasMultipleVehicles = customer.vehicles && customer.vehicles.length > 1;
+              
+              return (
+                <tr 
+                  key={customer._id} 
+                  className={`
+                    ${hasMultipleVehicles 
+                      ? 'bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 hover:from-blue-100 hover:via-purple-100 hover:to-pink-100 border-l-4 border-l-gradient-to-b border-l-blue-400' 
+                      : 'hover:bg-gray-50'
+                    } 
+                    transition-all duration-200 cursor-pointer group
+                  `}
+                  onContextMenu={(e) => onContextMenu && onContextMenu(e, customer)}
+                >
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md ${
+                        hasMultipleVehicles 
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
+                          : 'bg-gradient-to-r from-gray-500 to-gray-600'
+                      }`}>
+                        {customer.name?.charAt(0)?.toUpperCase() || 'N'}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900" title={customer.name}>
+                          {customer.name || 'N/A'}
+                        </div>
+                        {hasMultipleVehicles && (
+                          <div className="text-xs text-purple-600 font-medium flex items-center space-x-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 2a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                            </svg>
+                            <span>{customer.vehicles?.length || 0} Vehicles</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 truncate" title={customer.name}>
-                      {customer.name || 'N/A'}
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900">
-                  {customer.mobileNo || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900 truncate" title={customer.email}>
-                  {customer.email || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900 truncate" title={customer.apartment}>
-                  {customer.apartment || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900">
-                  {customer.doorNo || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    customer.packageName === 'Basic' ? 'bg-green-100 text-green-800' :
-                    customer.packageName === 'Moderate' ? 'bg-blue-100 text-blue-800' :
-                    customer.packageName === 'Classic' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {customer.packageName || 'N/A'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900 truncate" title={customer.carModel}>
-                  {customer.carModel || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${
-                    customer.carType === 'sedan' ? 'bg-blue-100 text-blue-800' :
-                    customer.carType === 'suv' ? 'bg-green-100 text-green-800' :
-                    customer.carType === 'premium' ? 'bg-purple-100 text-purple-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {customer.carType || 'N/A'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-gray-900">
-                  {(() => {
-                    if (!customer?.washingSchedule) return 'N/A';
-                    
-                    const { scheduleType } = customer.washingSchedule;
-                    const packageName = customer.packageName;
-                    
-                    if (scheduleType === 'schedule1') {
-                      return packageName === 'Basic' ? 'Mon, Thu' : 'Mon, Wed, Fri';
-                    } else if (scheduleType === 'schedule2') {
-                      return packageName === 'Basic' ? 'Tue, Sat' : 'Tue, Thu, Sat';
-                    } else {
-                      return 'Custom';
-                    }
-                  })()}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm font-semibold text-green-600">
-                  {formatPrice(customer.price)}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-center font-mono">
-                  {customer.vehicleNo || 'N/A'}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-center">
-                  {formatDate(customer.subscriptionStart)}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-sm text-center">
-                  {formatDate(customer.subscriptionEnd)}
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-center">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    customer.pendingWashes > 0 ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {customer.pendingWashes || 0}
-                  </span>
-                </td>
-                <td className="px-4 py-3 border-b border-gray-100 text-center">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    customer.completedWashes > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {customer.completedWashes || 0}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <div className="text-sm text-gray-900 truncate max-w-xs" title={customer.email}>
+                      {customer.email || 'N/A'}
+                    </div>
+                  </td>
+                  
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <div className="text-sm text-gray-900 font-mono">
+                      {customer.mobileNo || 'N/A'}
+                    </div>
+                  </td>
+                  
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <div className="text-sm text-gray-900 truncate max-w-xs" title={customer.apartment}>
+                      {customer.apartment || 'N/A'}
+                    </div>
+                  </td>
+                  
+                  <td className="px-4 py-4 border-b border-gray-100">
+                    <div className="text-sm text-gray-900">
+                      {customer.doorNo || 'N/A'}
+                    </div>
+                  </td>
+                  
+                  <td className="px-4 py-4 border-b border-gray-100 text-center">
+                    <button
+                      onClick={() => onViewDetails && onViewDetails(customer)}
+                      className={`
+                        inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 shadow-sm
+                        ${hasMultipleVehicles 
+                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white' 
+                          : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400'
+                        }
+                        group-hover:shadow-md transform group-hover:scale-105
+                      `}
+                    >
+                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      More Details
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
