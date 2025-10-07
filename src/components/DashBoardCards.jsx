@@ -53,7 +53,7 @@ export default function DashboardCards() {
                 <div className="flex items-start gap-3">
                   <div className="bg-blue-100 p-2 rounded-full">{req.icon}</div>
                   <div>
-                    <p className="font-medium">{req.name}</p> 
+                    <p className="text-start font-medium">{req.name}</p> 
                     <p className="text-sm text-gray-600">{req.vehicle}</p>
                     <div className="flex items-center text-sm text-gray-500 gap-2 mt-1">
                       <MapPin className="w-4 h-4" /> {req.location}
@@ -88,7 +88,7 @@ export default function DashboardCards() {
             {todaySchedule.map((sch) => (
               <div key={sch.id} className="flex items-center justify-between  pb-3 last:border-none">
                 <div>
-                  <p className="font-medium">{sch.name}</p>
+                  <p className="text-start font-medium">{sch.name}</p>
                   <p className="text-sm text-gray-600">{sch.service}</p>
                 </div>
                 <div className="flex items-center gap-3">

@@ -55,7 +55,7 @@ export default function JobsList() {
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">{job.icon}</div>
               <div>
-                <h3 className="font-semibold">{job.name}</h3>
+                <h3 className="text-start font-semibold">{job.name}</h3>
                 <p className="text-sm text-gray-600">{job.vehicle}</p>
                 <div className="flex items-center text-sm text-gray-500 mt-1 space-x-3">
                   <span className="flex items-center">

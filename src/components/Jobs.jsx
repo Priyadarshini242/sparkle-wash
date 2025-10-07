@@ -8,13 +8,6 @@ import {
 } from "@heroicons/react/24/outline";
 // import EarningsBarChart from "./components/EarningsBarChart.jsx";
 import Sidebar from "./components/Sidebar.jsx";
-// import Earning from "./components/Earning.jsx";
-// import HeaderCard from "./components/ HeaderCard.jsx";
-// import JobHeader from "./components/JobHeader.jsx"
-// import JobDetails from "./components/JobDetails.jsx";
-// import React from "react";
-// import JobsList from "./components/JobsList.jsx";
-// import UpcomingJobs from "./components/UpComingJobs.jsx";
 
 export default function Jobs() {
   // Example request data (can be passed to child components later)
