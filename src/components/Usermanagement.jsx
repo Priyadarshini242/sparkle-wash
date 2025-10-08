@@ -112,7 +112,7 @@ function Usermanagement() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/customer/getcustomers`);
+      const response = await fetch(`${API_BASE_URL}/customers/getcustomers`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
