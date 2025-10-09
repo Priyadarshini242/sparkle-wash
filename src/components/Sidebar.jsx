@@ -15,6 +15,7 @@ const items = [
   { id: "dashboard", label: "Dashboard", Icon: HomeIcon, route: "/dashboard" },
   { id: "customer", label: "Customer", Icon: UserIcon, route: "/admin" },
   { id: "washer", label: "Washer", Icon: UserIcon, route: "/washermanagement" },
+  { id: "washer-management", label: "Washer", Icon: WrenchScrewdriverIcon, route: "/washermanagement" },
   { id: "jobs", label: "Jobs", Icon: ShoppingCartIcon, route: "/jobs" },
   { id: "earnings", label: "Earnings", Icon: ChartBarIcon, route: "/earning" },
   { id: "profile", label: "Profile", Icon: UserIcon, route: "/profile" },
@@ -30,7 +31,7 @@ function NavItem({ Icon, label, active }) {
         className={`relative w-full flex items-center gap-3 rounded-xl px-3 py-3 text-left transition
                     ${active ? "bg-blue-700" : "hover:bg-blue-500/40"} focus:outline-none`}
       >
-        <Icon className="h-5 w-5 text-white" aria-hidden="true" />
+        {Icon && <Icon className="h-5 w-5 text-white" aria-hidden="true" />}
         <span className="font-medium text-white">{label}</span>
 
         {active && (

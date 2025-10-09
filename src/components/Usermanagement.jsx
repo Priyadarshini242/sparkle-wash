@@ -468,6 +468,21 @@ function Usermanagement() {
           </button>
         </nav>
       </div>
+          {/* Tabs */}
+         <div className="border-b mb-6">
+            <nav className="flex space-x-6">
+           
+         
+           </nav>
+     </div>
+
+        {/* Loading State */}
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-blue-600">Loading customers...</span>
+        </div>
+      )}
 
       {/* Summary + Activity + Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -813,8 +828,8 @@ const RecentActivity = () => {
 
 const CustomerTable = ({ 
   customers, 
-  formatDate, 
-  formatPrice, 
+  // formatDate, 
+  // formatPrice, 
   totalResults, 
   currentPage, 
   totalPages, 
