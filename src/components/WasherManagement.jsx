@@ -3,17 +3,17 @@ import axios from "axios";
 import AddWasherModal from "./AddWasherModal";
 import Sidebar from "./Sidebar";
 
-const API_BASE_URL = 'http://localhost:5000/api/washers';
+const API_BASE_URL = "http://localhost:5000/api/washers";
 
 function WasherManagement() {
   const [washers, setWashers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Pagination state
+  // ✅ Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 5; // ✅ Show only 5 items per page
+  const [limit, setLimit] = useState(10); // default 10 per page
 
   // Modal states
   const [editingWasher, setEditingWasher] = useState(null);
@@ -21,32 +21,35 @@ function WasherManagement() {
   const [isAddWasherModalOpen, setIsAddWasherModalOpen] = useState(false);
 
   // ✅ Fetch paginated washers from backend
-  const fetchWashers = async (page = 1) => {
+  const fetchWashers = async (page = 1, pageLimit = limit) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/getAllWasher?page=${page}&limit=${limit}`);
+      const response = await axios.get(
+        `${API_BASE_URL}/getAllWasher?page=${page}&limit=${pageLimit}`
+      );
       setWashers(response.data.data || []);
       setTotalPages(response.data.totalPages || 1);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch washers. Please check if the server is running.');
+      setError("Failed to fetch washers. Please check if the server is running.");
     } finally {
       setLoading(false);
     }
   };
 
+  // 🔁 Fetch whenever page or limit changes
   useEffect(() => {
-    fetchWashers(currentPage);
-  }, [currentPage]);
+    fetchWashers(currentPage, limit);
+  }, [currentPage, limit]);
 
   const handleWasherAdded = () => {
     setIsAddWasherModalOpen(false);
-    fetchWashers(currentPage);
+    fetchWashers(currentPage, limit);
   };
 
   // Pagination logic
   const getPageNumbers = () => {
-    const maxPagesToShow = 5;
+    const maxPagesToShow = 8;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = startPage + maxPagesToShow - 1;
     if (endPage > totalPages) {
@@ -68,7 +71,7 @@ function WasherManagement() {
     if (!window.confirm("Delete this washer?")) return;
     try {
       await axios.delete(`${API_BASE_URL}/${id}`);
-      fetchWashers(currentPage);
+      fetchWashers(currentPage, limit);
     } catch {
       alert("Delete failed");
     }
@@ -84,7 +87,7 @@ function WasherManagement() {
       const id = editingWasher._id || editingWasher.id;
       await axios.put(`${API_BASE_URL}/${id}`, editingWasher);
       setEditingWasher(null);
-      fetchWashers(currentPage);
+      fetchWashers(currentPage, limit);
     } catch {
       alert("Update failed");
     } finally {
@@ -173,22 +176,42 @@ function WasherManagement() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex justify-between items-center mt-4">
-          <button
-            onClick={goToPrevPage}
-            disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded disabled:opacity-50"
-          >
-            Previous
-          </button>
+        {/* ✅ Pagination Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 bg-white p-3 rounded shadow-sm">
+          {/* Rows per page selector */}
+          <div className="flex items-center gap-2 mb-3 sm:mb-0">
+            <label className="text-gray-700 font-medium">Rows per page:</label>
+            <select
+              value={limit}
+              onChange={(e) => {
+                const newLimit = parseInt(e.target.value);
+                setLimit(newLimit);
+                setCurrentPage(1); // reset to page 1
+              }}
+              className="border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
 
-          <div className="flex gap-1">
+          {/* Page numbers and navigation */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
             {getPageNumbers().map((page) => (
               <button
                 key={page}
                 onClick={() => goToPage(page)}
-                className={`px-3 py-1 rounded border ${
+                className={`px-3 py-1 rounded border transition ${
                   currentPage === page
                     ? "bg-blue-600 text-white border-blue-600"
                     : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
@@ -197,80 +220,19 @@ function WasherManagement() {
                 {page}
               </button>
             ))}
-          </div>
 
-          <button
-            onClick={goToNextPage}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
         </div>
-
-        {/* Edit Washer Modal */}
-        {editingWasher && (
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="absolute inset-0 bg-black opacity-40"
-              onClick={() => setEditingWasher(null)}
-            />
-            <div className="bg-white rounded p-6 z-10 w-11/12 max-w-md">
-              <h3 className="text-lg font-semibold mb-4">Edit Washer</h3>
-              <input
-                value={editingWasher.name || ""}
-                onChange={(e) =>
-                  setEditingWasher({ ...editingWasher, name: e.target.value })
-                }
-                className="w-full border p-2 mb-2"
-                placeholder="Name"
-              />
-              <input
-                value={editingWasher.email || ""}
-                onChange={(e) =>
-                  setEditingWasher({ ...editingWasher, email: e.target.value })
-                }
-                className="w-full border p-2 mb-2"
-                placeholder="Email"
-              />
-              <input
-                value={editingWasher.mobileNo || ""}
-                onChange={(e) =>
-                  setEditingWasher({ ...editingWasher, mobileNo: e.target.value })
-                }
-                className="w-full border p-2 mb-2"
-                placeholder="Mobile No"
-              />
-              <select
-                value={editingWasher.status || "Active"}
-                onChange={(e) =>
-                  setEditingWasher({ ...editingWasher, status: e.target.value })
-                }
-                className="w-full border p-2 mb-4"
-              >
-                <option>Active</option>
-                <option>Inactive</option>
-              </select>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setEditingWasher(null)}
-                  className="px-4 py-2 border rounded"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveEdit}
-                  disabled={savingEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
-                >
-                  {savingEdit ? "Saving..." : "Save"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
+      {/* Add Washer Modal */}
       <AddWasherModal
         isOpen={isAddWasherModalOpen}
         onClose={() => setIsAddWasherModalOpen(false)}
