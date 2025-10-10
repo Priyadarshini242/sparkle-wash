@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 
-const API_BASE_URL = 'import.meta.env.VITE_API_URL/washers/addwasher'; // Update with your actual API base URL
-
 const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
   const [formData, setFormData] = useState({
     name: "",
@@ -44,7 +42,7 @@ const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
     setIsLoading(true);
 
     try {
-            const response = await fetch('import.meta.env.VITE_API_URL/washers/addwasher', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/washers/addwasher`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -60,7 +58,7 @@ const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
       alert("Error: " + (errorData.message || "Failed to create washer"));
     }
     } catch (error) {
-      alert("Network error. Please try again.");
+      alert("Network error. Please try again.", error.message);
     } finally {
       setIsLoading(false);
     }

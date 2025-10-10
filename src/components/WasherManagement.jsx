@@ -3,7 +3,7 @@ import axios from "axios";
 import AddWasherModal from "./AddWasherModal";
 import Sidebar from "./Sidebar";
 
-const API_BASE_URL = "import.meta.env.VITE_API_URL/washers";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 function WasherManagement() {
   const [washers, setWashers] = useState([]);
@@ -25,7 +25,7 @@ function WasherManagement() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${API_BASE_URL}/getAllWasher?page=${page}&limit=${pageLimit}`
+        `${API_BASE_URL}/washers/getAllWasher?page=${page}&limit=${pageLimit}`
       );
       setWashers(response.data.data || []);
       setTotalPages(response.data.totalPages || 1);

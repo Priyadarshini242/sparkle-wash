@@ -16,7 +16,7 @@ import WasherAllocationModal from "./WasherAllocationModal";
 import Sidebar from "./Sidebar";
 
 // API Configuration
-const API_BASE_URL = 'import.meta.env.VITE_API_URL';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 function Usermanagement() {
   const [activeTab, setActiveTab] = useState("customers");
@@ -112,7 +112,7 @@ function Usermanagement() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/customers/getcustomers`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customers/getcustomers`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
