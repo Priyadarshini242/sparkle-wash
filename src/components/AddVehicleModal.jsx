@@ -20,7 +20,7 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('import.meta.env.VITE_API_URL/package/packages');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/package/packages`);
         if (response.ok) {
           const data = await response.json();
           setPackages(data);

@@ -104,7 +104,7 @@ const EditCustomerModal = ({ isOpen, onClose, onCustomerUpdated, customer }) => 
     try {
       setIsSubmitting(true);
       
-      const response = await fetch(`import.meta.env.VITE_API_URL/customer/update/${customer._id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customers/update/${customer._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
