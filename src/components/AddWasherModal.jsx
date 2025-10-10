@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 
-const API_BASE_URL = 'http://localhost:5000/api/washers/addwasher'; // Update with your actual API base URL
+const API_BASE_URL = 'import.meta.env.VITE_API_URL/washers/addwasher'; // Update with your actual API base URL
 
 const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
   const [formData, setFormData] = useState({
@@ -44,7 +44,7 @@ const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
     setIsLoading(true);
 
     try {
-            const response = await fetch('http://localhost:5000/api/washers/addwasher', {
+            const response = await fetch('import.meta.env.VITE_API_URL/washers/addwasher', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

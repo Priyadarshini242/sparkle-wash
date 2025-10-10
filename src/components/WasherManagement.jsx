@@ -3,7 +3,7 @@ import axios from "axios";
 import AddWasherModal from "./AddWasherModal";
 import Sidebar from "./Sidebar";
 
-const API_BASE_URL = "http://localhost:5000/api/washers";
+const API_BASE_URL = "import.meta.env.VITE_API_URL/washers";
 
 function WasherManagement() {
   const [washers, setWashers] = useState([]);

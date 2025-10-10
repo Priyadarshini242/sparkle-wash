@@ -34,7 +34,7 @@ const VehicleWasherAllocationModal = ({ isOpen, onClose, onWasherAllocated, cust
   const fetchWashers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/washer/washer');
+      const response = await fetch('import.meta.env.VITE_API_URL/washer/washer');
       
       if (response.ok) {
         const data = await response.json();
@@ -72,8 +72,8 @@ const VehicleWasherAllocationModal = ({ isOpen, onClose, onWasherAllocated, cust
       // In that case, we need to use a different API endpoint or handle it differently
       const vehicleId = vehicle._id || 'single-vehicle';
       const apiUrl = vehicle._id 
-        ? `http://localhost:5000/api/customer/${customer._id}/vehicles/${vehicle._id}/allocate-washer`
-        : `http://localhost:5000/api/customer/allocate-washer`; // Legacy endpoint for single vehicles
+        ? `import.meta.env.VITE_API_URL/customer/${customer._id}/vehicles/${vehicle._id}/allocate-washer`
+        : `import.meta.env.VITE_API_URL/customer/allocate-washer`; // Legacy endpoint for single vehicles
       
       const requestBody = vehicle._id 
         ? {

@@ -34,7 +34,7 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/package/packages');
+        const response = await fetch('import.meta.env.VITE_API_URL/package/packages');
         if (response.ok) {
           const data = await response.json();
           setPackages(data);
@@ -97,7 +97,7 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
     setIsLoading(true);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/customer/${customer._id}/vehicles/${vehicle._id}`, {
+      const response = await fetch(`import.meta.env.VITE_API_URL/customer/${customer._id}/vehicles/${vehicle._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

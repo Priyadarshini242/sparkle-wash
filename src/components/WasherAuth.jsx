@@ -45,7 +45,7 @@ const WasherAuth = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('http://localhost:5000/api/washer/authenticate', {
+      const response = await fetch('import.meta.env.VITE_API_URL/washer/authenticate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

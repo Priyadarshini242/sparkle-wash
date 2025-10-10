@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-
-
-
 export default function AdminLogin() {
   const [adminId, setAdminId] = useState("");
   const [password, setPassword] = useState("");
@@ -22,7 +19,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setError("");
     try {
-      const res = await fetch('http://localhost:5000/api/auth/login', {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: adminId, password }),
@@ -48,8 +45,8 @@ export default function AdminLogin() {
       } else {
         setError(json.message || "Login failed");
       }
-    } catch (err) {
-      setError("Server error");
+    } catch (error) {
+      setError("Server error", error.message);
     }
   }
 

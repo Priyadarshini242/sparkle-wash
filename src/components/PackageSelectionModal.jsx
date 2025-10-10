@@ -15,7 +15,7 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
       setError(null);
       
       try {
-        const response = await fetch('http://localhost:5000/api/package/package');
+        const response = await fetch('import.meta.env.VITE_API_URL/package/package');
         if (response.ok) {
           const data = await response.json();
           setPackages(data);

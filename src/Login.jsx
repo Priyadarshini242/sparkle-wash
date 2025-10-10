@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 function Login() {
   const getUser = () => {
-  fetch("http://localhost:5000/api/getUser")   // ✅ Correct
+  fetch(`${import.meta.env.VITE_API_URL}/getUser`)   // ✅ Correct
     .then(res => res.json())
     .then(json => {
       setUser(json.data)
