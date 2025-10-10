@@ -30,7 +30,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('import.meta.env.VITE_API_URL/package/packages');
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/package/package`);
         if (response.ok) {
           const data = await response.json();
           setPackages(data);
@@ -152,7 +152,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('import.meta.env.VITE_API_URL/customer/add', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

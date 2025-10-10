@@ -23,7 +23,7 @@ const CustomerHistoryModal = ({ isOpen, onClose, customer }) => {
   const fetchWashHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`import.meta.env.VITE_API_URL/customer/${customer._id}/wash-history?month=${selectedMonth}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/${customer._id}/wash-history?month=${selectedMonth}`);
       
       if (response.ok) {
         const data = await response.json();

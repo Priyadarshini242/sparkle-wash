@@ -112,7 +112,7 @@ function Usermanagement() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/customers/getcustomers`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/getcustomers`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

@@ -11,16 +11,23 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
     const fetchPackages = async () => {
       if (!isOpen) return;
       
+      console.log('PackageSelectionModal opened, fetching packages...');
       setLoading(true);
       setError(null);
       
       try {
-        const response = await fetch('import.meta.env.VITE_API_URL/package/package');
+        const apiUrl = `${import.meta.env.VITE_API_URL}/package/package`;
+        console.log('Fetching packages from:', apiUrl);
+        const response = await fetch(apiUrl);
+        console.log('Package fetch response:', response.status, response.statusText);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Packages received:', data);
           setPackages(data);
         } else {
-          setError('Failed to load packages');
+          console.error('Failed to fetch packages:', response.status);
+          setError(`Failed to load packages: ${response.status}`);
         }
       } catch (error) {
         console.error('Error fetching packages:', error);

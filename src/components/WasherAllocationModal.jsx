@@ -23,7 +23,7 @@ const WasherAllocationModal = ({ isOpen, onClose, onWasherAllocated, customer })
   const fetchWashers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('import.meta.env.VITE_API_URL/washer/washer');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/washer/washer`);
       
       if (response.ok) {
         const data = await response.json();
@@ -50,7 +50,7 @@ const WasherAllocationModal = ({ isOpen, onClose, onWasherAllocated, customer })
 
     try {
       setAllocating(true);
-      const response = await fetch(`import.meta.env.VITE_API_URL/customer/allocate-washer`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/allocate-washer`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -25,7 +25,7 @@ function WasherManagement() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${API_BASE_URL}/washers/getAllWasher?page=${page}&limit=${pageLimit}`
+        `${API_BASE_URL}/washer/getAllWasher?page=${page}&limit=${pageLimit}`
       );
       setWashers(response.data.data || []);
       setTotalPages(response.data.totalPages || 1);

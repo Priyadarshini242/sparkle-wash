@@ -45,7 +45,7 @@ const WasherAuth = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('import.meta.env.VITE_API_URL/washer/authenticate', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/washer/authenticate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +58,7 @@ const WasherAuth = () => {
         // Store washer info in localStorage
         localStorage.setItem('washerAuth', JSON.stringify(result.washer));
         // Navigate to washer dashboard
-        navigate('/washer/dashboard');
+        navigate('/washerdashboard');
       } else {
         const errorData = await response.json();
         setErrors({ general: errorData.message || 'Authentication failed' });

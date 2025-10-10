@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PackageSelectionModal from './PackageSelectionModal';
 
 const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
   const [vehicleData, setVehicleData] = useState({
@@ -12,7 +11,6 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
   });
   
   const [errors, setErrors] = useState({});
-  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
   const [packages, setPackages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,10 +18,14 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
   useEffect(() => {
     const fetchPackages = async () => {
       try {
-        const response = await fetch('import.meta.env.VITE_API_URL/package/packages');
+        console.log('Fetching packages from:', `${import.meta.env.VITE_API_URL}/package/package`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/package/package`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Packages fetched successfully:', data);
           setPackages(data);
+        } else {
+          console.error('Failed to fetch packages:', response.status);
         }
       } catch (error) {
         console.error('Error fetching packages:', error);
@@ -46,14 +48,21 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
     }
   };
 
-  // Handle package selection
-  const handlePackageSelect = (packageData) => {
+  // Handle package selection from dropdown
+  const handlePackageChange = (e) => {
+    const selectedPackageId = e.target.value;
+    const selectedPackage = packages.find(pkg => pkg._id === selectedPackageId);
+    
     setVehicleData(prev => ({
       ...prev,
-      packageId: packageData._id,
-      packageName: packageData.name
+      packageId: selectedPackageId,
+      packageName: selectedPackage ? selectedPackage.name : ''
     }));
-    setIsPackageModalOpen(false);
+    
+    // Clear error when package is selected
+    if (errors.package) {
+      setErrors(prev => ({ ...prev, package: '' }));
+    }
   };
 
   // Validation function
@@ -83,7 +92,7 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`import.meta.env.VITE_API_URL/customer/${customer._id}/vehicles`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/${customer._id}/vehicles`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,26 +237,21 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Package Selection *
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsPackageModalOpen(true)}
-                      className={`w-full px-4 py-2 border-2 border-dashed rounded-md text-sm font-medium transition-colors duration-200 ${
-                        vehicleData.packageName
-                          ? 'border-green-400 bg-green-50 text-green-700'
-                          : 'border-gray-300 bg-gray-50 text-gray-600 hover:border-green-400 hover:bg-green-50'
+                    <select
+                      name="packageId"
+                      value={vehicleData.packageId}
+                      onChange={handlePackageChange}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                        errors.package ? 'border-red-500' : 'border-gray-300'
                       }`}
                     >
-                      {vehicleData.packageName ? (
-                        <span className="flex items-center justify-center">
-                          <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                          {vehicleData.packageName} Package Selected
-                        </span>
-                      ) : (
-                        <span>Click to Select Package</span>
-                      )}
-                    </button>
+                      <option value="">Select a package</option>
+                      {packages.map((pkg) => (
+                        <option key={pkg._id} value={pkg._id}>
+                          {pkg.name} - ₹{pkg.pricePerMonth}/month ({pkg.carType})
+                        </option>
+                      ))}
+                    </select>
                     {errors.package && <p className="text-red-500 text-xs mt-1">{errors.package}</p>}
                   </div>
 
@@ -336,13 +340,7 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
         </div>
       </div>
 
-      {/* Package Selection Modal */}
-      <PackageSelectionModal
-        isOpen={isPackageModalOpen}
-        onClose={() => setIsPackageModalOpen(false)}
-        onPackageSelect={handlePackageSelect}
-        packages={packages}
-      />
+
     </>
   );
 };

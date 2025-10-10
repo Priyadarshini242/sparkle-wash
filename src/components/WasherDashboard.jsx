@@ -36,7 +36,7 @@ const WasherDashboard = () => {
   const fetchWasherData = async (washerId, date = selectedDate, apartment = selectedApartment, carType = selectedCarType) => {
     try {
       setLoading(true);
-      let url = `import.meta.env.VITE_API_URL/washer/dashboard/${washerId}`;
+      let url = `${import.meta.env.VITE_API_URL}/washer/dashboard/${washerId}`;
       const params = new URLSearchParams();
       
       if (date && date !== 'today') {
@@ -87,7 +87,7 @@ const WasherDashboard = () => {
         throw new Error('Washer data not loaded properly');
       }
 
-      const response = await fetch('import.meta.env.VITE_API_URL/customer/complete-wash', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/complete-wash`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
