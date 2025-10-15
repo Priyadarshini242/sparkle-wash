@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDaysIcon, BuildingOffice2Icon, FunnelIcon } from '@heroicons/react/24/outline';
+import Popup from "./Popup";
 
 const WasherDashboard = () => {
   const [washer, setWasher] = useState(null);
@@ -11,12 +12,14 @@ const WasherDashboard = () => {
   const [error, setError] = useState(null);
   const [expandedCustomer, setExpandedCustomer] = useState(null);
   const [completingWash, setCompletingWash] = useState(null);
+  const [completWash, setCompletWash] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
   
   // Filter states
   const [selectedDate, setSelectedDate] = useState('today');
   const [selectedApartment, setSelectedApartment] = useState('all');
   const [selectedCarType, setSelectedCarType] = useState('all'); // New state for car type filter
-  const [showFilters, setShowFilters] = useState(false);
+  
   
   const navigate = useNavigate();
 
@@ -77,8 +80,10 @@ const WasherDashboard = () => {
     }
   };
 
-  const markWashCompleted = async (customerId) => {
-    setCompletingWash(customerId);
+  const markWashCompleted = async (customerId, washType) => {
+    if(washType === 'exterior'){
+        setCompletingWash(customerId);
+    }
     try {
       console.log('Washer data:', washer); // Debug log
       console.log('Customer ID:', customerId); // Debug log
@@ -95,7 +100,8 @@ const WasherDashboard = () => {
         body: JSON.stringify({
           customerId,
           washerId: washer._id,
-          washerName: washer.name
+          washerName: washer.name,
+          washType: washType
         }),
       });
 
@@ -415,8 +421,8 @@ const WasherDashboard = () => {
                         >
                           More Details
                         </button>
-                        <button
-                          onClick={() => markWashCompleted(customer._id)}
+                          <button
+                          onClick={() => markWashCompleted(customer._id, 'exterior')}
                           disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
                           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                             customer.pendingWashes > 0 && completingWash !== customer._id
@@ -433,6 +439,22 @@ const WasherDashboard = () => {
                             'Mark Complete'
                           )}
                         </button>
+                        {(customer.packageName === 'Classic' || customer.packageName === 'Premium') && 
+                        <button
+                          onClick={() => {
+                            setIsOpen(true)
+                            setCompletWash(customer._id);
+                          }}
+                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            customer.pendingWashes > 0 && completWash !== customer._id
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                            Mark Complete With Interior
+                        </button>
+                        }
                       </div>
                     </div>
                   ) : (
@@ -561,7 +583,7 @@ const WasherDashboard = () => {
                       {/* Action Buttons */}
                       <div className="flex justify-end space-x-3">
                         <button
-                          onClick={() => markWashCompleted(customer._id)}
+                          onClick={() => markWashCompleted(customer._id, 'exterior')}
                           disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
                           className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${
                             customer.pendingWashes > 0 && completingWash !== customer._id
@@ -575,9 +597,25 @@ const WasherDashboard = () => {
                               <span>Completing...</span>
                             </div>
                           ) : (
-                            'Mark Work Complete'
+                            'Mark Complete'
                           )}
                         </button>
+                        {(customer.packageName === 'Classic' || customer.packageName === 'Premium') && 
+                        <button
+                          onClick={() => {
+                            setIsOpen(true)
+                            setCompletWash(customer._id);
+                          }}
+                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                            customer.pendingWashes > 0 && completingWash !== customer._id
+                              ? 'bg-green-600 text-white hover:bg-green-700'
+                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          }`}
+                        >
+                            Mark Complete With Interior
+                        </button>
+                        }
                       </div>
                     </div>
                   )}
@@ -588,6 +626,7 @@ const WasherDashboard = () => {
           )}
         </div>
       </div>
+      <Popup isOpen={isOpen} completWash={completWash} setCompletWash={setCompletWash} setIsOpen={setIsOpen} markWashCompleted={markWashCompleted}/>
     </div>
   );
 };
