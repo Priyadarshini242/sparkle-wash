@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaCar, FaEdit, FaTrash, FaPlus, FaUser, FaPhone, FaEnvelope, FaHome, FaDoorClosed, FaCalendarAlt, FaChartBar } from 'react-icons/fa';
 import VehicleWasherAllocationModal from './VehicleWasherAllocationModal';
 
-const CustomerDetailsModal = ({ 
-  isOpen, 
-  onClose, 
-  customer, 
+const CustomerDetailsModal = ({
+  isOpen,
+  onClose,
+  customer,
   onCustomerUpdated,
-  onEditVehicle, 
-  onDeleteVehicle, 
-  onAddVehicle, 
-  onEditCustomer 
+  onEditVehicle,
+  onDeleteVehicle,
+  onAddVehicle,
+  onEditCustomer
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isWasherModalOpen, setIsWasherModalOpen] = useState(false);
   const [selectedVehicleForWasher, setSelectedVehicleForWasher] = useState(null);
+  const [localCustomer, setLocalCustomer] = useState(customer);
 
-  if (!isOpen || !customer) return null;
+  useEffect(() => {
+    setLocalCustomer(customer);
+  }, [customer]);
 
-  const hasMultipleVehicles = customer.hasMultipleVehicles || (customer.totalVehicles && customer.totalVehicles > 1);
+  if (!isOpen || !localCustomer) return null;
+
+  const hasMultipleVehicles = localCustomer.hasMultipleVehicles || (localCustomer.totalVehicles && localCustomer.totalVehicles > 1);
 
   const handleAllocateWasher = (customer, vehicle) => {
     setSelectedVehicleForWasher(vehicle);
@@ -180,6 +185,14 @@ const CustomerDetailsModal = ({
     </div>
   );
 
+  // When washer is allocated, update local customer and inform parent
+  const handleWasherAllocated = (updatedCustomer) => {
+    setLocalCustomer(updatedCustomer);
+    if (onCustomerUpdated) onCustomerUpdated(updatedCustomer);
+    setIsWasherModalOpen(false);
+    setSelectedVehicleForWasher(null);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
@@ -192,9 +205,9 @@ const CustomerDetailsModal = ({
                 <FaUser className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-white">{customer.name}</h2>
+                <h2 className="text-2xl font-bold text-white">{localCustomer.name}</h2>
                 <p className="text-blue-100">
-                  {hasMultipleVehicles ? `${customer.totalVehicles} Vehicles` : '1 Vehicle'} • 
+                  {hasMultipleVehicles ? `${localCustomer.totalVehicles} Vehicles` : '1 Vehicle'} • 
                   <span className="ml-1">Customer Details</span>
                 </p>
               </div>
@@ -227,7 +240,7 @@ const CustomerDetailsModal = ({
                   : 'text-white hover:bg-white hover:bg-opacity-20'
               }`}
             >
-              Vehicles ({customer.totalVehicles || 1})
+              Vehicles ({localCustomer.totalVehicles || 1})
             </button>
           </div>
         </div>
@@ -257,28 +270,28 @@ const CustomerDetailsModal = ({
                     <FaPhone className="h-5 w-5 text-gray-400" />
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Phone Number</label>
-                      <p className="text-lg text-gray-900">{customer.mobileNo}</p>
+                      <p className="text-lg text-gray-900">{localCustomer.mobileNo}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <FaEnvelope className="h-5 w-5 text-gray-400" />
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Email</label>
-                      <p className="text-lg text-gray-900">{customer.email || 'Not provided'}</p>
+                      <p className="text-lg text-gray-900">{localCustomer.email || 'Not provided'}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <FaHome className="h-5 w-5 text-gray-400" />
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Apartment</label>
-                      <p className="text-lg text-gray-900">{customer.apartment}</p>
+                      <p className="text-lg text-gray-900">{localCustomer.apartment}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
                     <FaDoorClosed className="h-5 w-5 text-gray-400" />
                     <div>
                       <label className="block text-sm font-medium text-gray-600">Door Number</label>
-                      <p className="text-lg text-gray-900">{customer.doorNo}</p>
+                      <p className="text-lg text-gray-900">{localCustomer.doorNo}</p>
                     </div>
                   </div>
                 </div>
@@ -293,11 +306,11 @@ const CustomerDetailsModal = ({
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Subscription Start</label>
-                    <p className="text-lg text-gray-900">{formatDate(customer.subscriptionStart)}</p>
+                    <p className="text-lg text-gray-900">{formatDate(localCustomer.subscriptionStart)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">Subscription End</label>
-                    <p className="text-lg text-gray-900">{formatDate(customer.subscriptionEnd)}</p>
+                    <p className="text-lg text-gray-900">{formatDate(localCustomer.subscriptionEnd)}</p>
                   </div>
                 </div>
               </div>
@@ -318,8 +331,8 @@ const CustomerDetailsModal = ({
               </div>
               
               <div className="grid gap-4">
-                {customer.vehicles && customer.vehicles.length > 0 ? (
-                  customer.vehicles.map((vehicle, index) => (
+                {localCustomer.vehicles && localCustomer.vehicles.length > 0 ? (
+                  localCustomer.vehicles.map((vehicle, index) => (
                     <VehicleCard 
                       key={vehicle._id || index} 
                       vehicle={vehicle} 
@@ -374,9 +387,9 @@ const CustomerDetailsModal = ({
       <VehicleWasherAllocationModal
         isOpen={isWasherModalOpen}
         onClose={handleWasherModalClose}
-        customer={customer}
+        customer={localCustomer}
         vehicle={selectedVehicleForWasher}
-        onWasherAllocated={onCustomerUpdated}
+        onWasherAllocated={handleWasherAllocated}
       />
     </div>
   );

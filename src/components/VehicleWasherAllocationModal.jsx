@@ -196,6 +196,32 @@ const VehicleWasherAllocationModal = ({ isOpen, onClose, onWasherAllocated, cust
             )}
           </div>
 
+          {/* Assigned Washer Info - New UI */}
+          {vehicle.washerId ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    {vehicle.washerId.name || 'Assigned Washer'}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    ID: {vehicle.washerId.employeeId || 'N/A'}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-1 text-green-600">
+                  {/* Additional icons or actions can go here */}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800 text-sm flex items-center">
+                <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                No washer is currently assigned to this vehicle. Please allocate a washer.
+              </p>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center items-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
