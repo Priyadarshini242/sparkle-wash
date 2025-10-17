@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
+const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewChange }) => {
   const [vehicleData, setVehicleData] = useState({
     vehicleNo: '',
     carModel: '',
@@ -35,6 +35,16 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
     if (isOpen) {
       fetchPackages();
     }
+  }, [isOpen]);
+
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+    return;
   }, [isOpen]);
 
   // Handle input changes
@@ -127,8 +137,17 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded }) => {
       scheduleType: 'schedule1'
     });
     setErrors({});
+    if (typeof onPreviewChange === 'function') onPreviewChange(null);
     onClose();
   };
+
+  // send preview updates to parent
+  useEffect(() => {
+    if (!isOpen) return;
+    if (typeof onPreviewChange === 'function') {
+      onPreviewChange(vehicleData);
+    }
+  }, [vehicleData, isOpen, onPreviewChange]);
 
   // Get schedule display text
   const getScheduleDisplay = (scheduleType, packageName) => {

@@ -60,6 +60,7 @@ function Usermanagement() {
   const [isEditVehicleModalOpen, setIsEditVehicleModalOpen] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState(null);
   const [customerForVehicleAction, setCustomerForVehicleAction] = useState(null);
+  const [vehiclePreview, setVehiclePreview] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -687,6 +688,7 @@ function Usermanagement() {
           setCustomerForDetails(null);
         }}
         customer={customerForDetails}
+        vehiclePreview={vehiclePreview}
         onCustomerUpdated={fetchCustomers}
         onEditVehicle={handleEditVehicle}
         onDeleteVehicle={handleDeleteVehicle}
@@ -700,9 +702,11 @@ function Usermanagement() {
         onClose={() => {
           setIsAddVehicleModalOpen(false);
           setCustomerForVehicleAction(null);
+          setVehiclePreview(null);
         }}
         customer={customerForVehicleAction}
         onVehicleAdded={handleVehicleAdded}
+        onPreviewChange={setVehiclePreview}
       />
 
       {/* Edit Vehicle Modal */}

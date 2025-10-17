@@ -45,6 +45,8 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
     }
   }, [isOpen]);
 
+  // No document-level scroll locking here; modal content scrolls itself.
+
   // Handle customer info changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -214,8 +216,8 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[95vh] overflow-hidden">
-          <div className="flex flex-col h-full">
+  <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 h-[95vh] overflow-hidden flex flex-col">
+          <div className="flex flex-col h-full min-h-0">
             {/* Header */}
             <div className="px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
               <div className="flex justify-between items-center">
@@ -231,7 +233,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-scroll p-6 max-h-[calc(95vh-120px)]">
               <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Customer Information Section */}
                 <div className="bg-gray-50 rounded-lg p-6">
