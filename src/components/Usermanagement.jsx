@@ -50,7 +50,7 @@ function Usermanagement() {
   
   // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
+
   // Customer details modal state
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [customerForDetails, setCustomerForDetails] = useState(null);
@@ -62,20 +62,20 @@ function Usermanagement() {
   const [customerForVehicleAction, setCustomerForVehicleAction] = useState(null);
   const [customerToDelete, setCustomerToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Washer allocation modal state
   const [isWasherAllocationModalOpen, setIsWasherAllocationModalOpen] = useState(false);
   const [customerToAllocate, setCustomerToAllocate] = useState(null);
-  
+
   // Bulk operations modal state
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10); // Items per page
 
   // Get unique values from customers data (updated for multi-vehicle)
-  const uniqueCarModels = [...new Set(customers
+  const uniqueCarModels = [...new Set(customersArray
     .flatMap(customer => {
       if (customer.hasMultipleVehicles && customer.vehicles) {
         return customer.vehicles.map(vehicle => vehicle.carModel);
@@ -89,7 +89,7 @@ function Usermanagement() {
     .filter(carModel => carModel && carModel.trim() !== "" && carModel !== "N/A")
   )].sort();
 
-  const uniquePackages = [...new Set(customers
+  const uniquePackages = [...new Set(customersArray
     .flatMap(customer => {
       if (customer.hasMultipleVehicles && customer.vehicles) {
         return customer.vehicles.map(vehicle => vehicle.packageName);
@@ -103,7 +103,7 @@ function Usermanagement() {
     .filter(packageName => packageName && packageName.trim() !== "" && packageName !== "N/A")
   )].sort();
 
-  const uniqueApartments = [...new Set(customers
+  const uniqueApartments = [...new Set(customersArray
     .map(customer => customer.apartment)
     .filter(apartment => apartment && apartment.trim() !== "" && apartment !== "N/A")
   )].sort();
@@ -150,39 +150,38 @@ function Usermanagement() {
       // Backward compatibility search
       customer.vehicleNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer.carModel?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesPackage = !packageFilter || 
+
+    const matchesPackage = !packageFilter ||
       // Check in vehicles array
       (customer.vehicles && customer.vehicles.some(vehicle => vehicle.packageName === packageFilter)) ||
       // Backward compatibility
       customer.packageName === packageFilter;
-    
+
     const matchesCarModel = !carModelFilter ||
       // Check in vehicles array
       (customer.vehicles && customer.vehicles.some(vehicle => vehicle.carModel === carModelFilter)) ||
       // Backward compatibility
       customer.carModel === carModelFilter;
-    
+
     const matchesApartment = !apartmentFilter || customer.apartment === apartmentFilter;
-    const matchesCarType = !carTypeFilter || 
+    const matchesCarType = !carTypeFilter ||
       // Check in vehicles array
       (customer.vehicles && customer.vehicles.some(vehicle => vehicle.carType === carTypeFilter)) ||
       // Backward compatibility
       customer.carType === carTypeFilter;
-    
+
     return matchesSearch && matchesPackage && matchesCarModel && matchesApartment && matchesCarType;
   });
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
+  // Pagination calculations
+  const totalResults = filteredCustomers.length;
+  const totalPages = Math.max(1, Math.ceil(totalResults / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalResults);
   const currentCustomers = filteredCustomers.slice(startIndex, endIndex);
 
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, packageFilter, apartmentFilter, carTypeFilter]);
+  // reset page on filter / rows change
+  useEffect(() => setCurrentPage(1), [searchTerm, packageFilter, apartmentFilter, carTypeFilter, itemsPerPage]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -411,7 +410,7 @@ function Usermanagement() {
       setIsDeleting(false);
     }
   };
-     return (
+  return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <Sidebar />
@@ -444,8 +443,8 @@ function Usermanagement() {
             </header>
 
       {/* Tabs */}
-      <div className="border-b mb-6">
-        <nav className="flex space-x-6">
+            <div className="border-b mb-6">
+              <nav className="flex space-x-6">
           <button
             onClick={() => setActiveTab("customers")}
             className={`pb-2 ${
@@ -454,8 +453,8 @@ function Usermanagement() {
                 : "text-gray-500"
             }`}
           >
-            Customer Management
-          </button>
+                  Customer Management
+                </button>
           <button
             onClick={() => setActiveTab("washing")}
             className={`pb-2 ${
@@ -464,26 +463,26 @@ function Usermanagement() {
                 : "text-gray-500"
             }`}
           >
-            Washing Person Management
-          </button>
-        </nav>
-      </div>
+                  Washing Person Management
+                </button>
+              </nav>
+            </div>
 
       {/* Summary + Activity + Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <UserSummary customers={customers} />
-        <RecentActivity />
-      </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <UserSummary customers={customers} />
+              <RecentActivity />
+            </div>
 
       {/* Table section */}
-      <div className="bg-white p-4 rounded shadow">
+            <div className="bg-white p-4 rounded shadow">
         {/* Loading State */}
-        {loading && (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-gray-600">Loading customers...</p>
-          </div>
-        )}
+              {loading && (
+                <div className="text-center py-8">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-gray-600">Loading customers...</p>
+                </div>
+              )}
 
         {/* Error State */}
         {error && (
@@ -493,10 +492,10 @@ function Usermanagement() {
         )}
 
         {/* Search + Filters */}
-        {!loading && (
-          <div className="space-y-4 mb-6">
+              {!loading && (
+                <div className="space-y-4 mb-6">
             {/* Search Bar */}
-            <div className="w-full">
+                  <div className="w-full">
               <input
                 type="text"
                 placeholder="Search customers by name, phone, email, vehicle number, or apartment..."
@@ -504,48 +503,42 @@ function Usermanagement() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="border rounded px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-            </div>
-            
+                  </div>
+
             {/* Filters Row */}
-            <div className="flex flex-wrap gap-3 items-center">
-              <select 
-                value={packageFilter}
-                onChange={(e) => setPackageFilter(e.target.value)}
-                className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Packages</option>
-                {uniquePackages.map(packageName => (
-                  <option key={packageName} value={packageName}>
-                    {packageName}
-                  </option>
-                ))}
-              </select>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <div className="flex items-center gap-2">
+                      <label className="text-gray-700 font-medium">Rows:</label>
+                      <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(parseInt(e.target.value, 10) || 10); setCurrentPage(1); }}
+                        className="border rounded px-3 py-2 min-w-[80px] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                      </select>
+                    </div>
 
-              <select 
-                value={apartmentFilter}
-                onChange={(e) => setApartmentFilter(e.target.value)}
-                className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Apartments</option>
-                {uniqueApartments.map(apartment => (
-                  <option key={apartment} value={apartment}>
-                    {apartment}
-                  </option>
-                ))}
-              </select>
+                    <select value={packageFilter} onChange={e => setPackageFilter(e.target.value)}
+                      className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">All Packages</option>
+                      {uniquePackages.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
 
-              <select 
-                value={carTypeFilter}
-                onChange={(e) => setCarTypeFilter(e.target.value)}
-                className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Car Types</option>
-                <option value="sedan">Sedan</option>
-                <option value="suv">SUV</option>
-                <option value="premium">Premium</option>
-              </select>
-              
-              <div className="flex gap-2">
+                    <select value={apartmentFilter} onChange={e => setApartmentFilter(e.target.value)}
+                      className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">All Apartments</option>
+                      {uniqueApartments.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+
+                    <select value={carTypeFilter} onChange={e => setCarTypeFilter(e.target.value)}
+                      className="border rounded px-3 py-2 min-w-[140px] focus:outline-none focus:ring-2 focus:ring-blue-500">
+                      <option value="">All Car Types</option>
+                      <option value="sedan">Sedan</option>
+                      <option value="suv">SUV</option>
+                      <option value="premium">Premium</option>
+                    </select>
+
+                    <div className="flex gap-2">
                  <button 
                   onClick={clearFilters}
                   className="border border-gray-400 text-gray-600 rounded px-4 py-2 hover:bg-gray-100 transition-colors"
@@ -553,7 +546,7 @@ function Usermanagement() {
                 >
                   Clear Filters
                 </button>
-                
+
                 <button 
                   onClick={() => setIsBulkModalOpen(true)}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors flex items-center space-x-2"
@@ -562,60 +555,60 @@ function Usermanagement() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <span>Bulk Operations</span>
-                </button>
-                
+                        <span>Bulk Operations</span>
+                      </button>
+
                 <button 
                   onClick={() => setIsAddCustomerModalOpen(true)}
                   className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
                 >
                   Add New Customer
                 </button>
-              </div>
-            </div>
-          </div>
-        )}
+                    </div>
+                  </div>
+                </div>
+              )}
 
         {/* Active Filters Summary */}
-        {!loading && (searchTerm || packageFilter || apartmentFilter || carTypeFilter) && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-blue-800">
-                <strong>Active Filters:</strong>
-                {searchTerm && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Search: "{searchTerm}"</span>}
-                {packageFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Package: {packageFilter}</span>}
-                {apartmentFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Apartment: {apartmentFilter}</span>}
-                {carTypeFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Type: {carTypeFilter}</span>}
+              {!loading && (searchTerm || packageFilter || apartmentFilter || carTypeFilter) && (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-blue-800">
+                      <strong>Active Filters:</strong>
+                      {searchTerm && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Search: "{searchTerm}"</span>}
+                      {packageFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Package: {packageFilter}</span>}
+                      {apartmentFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Apartment: {apartmentFilter}</span>}
+                      {carTypeFilter && <span className="ml-2 px-2 py-1 bg-blue-200 rounded text-xs">Type: {carTypeFilter}</span>}
                 <span className="ml-2 text-blue-600">({filteredCustomers.length} results)</span>
-              </div>
+                    </div>
               <button 
                 onClick={clearFilters}
                 className="text-blue-600 hover:text-blue-800 text-sm underline"
               >
                 Clear All
               </button>
-            </div>
-          </div>
-        )}
+                  </div>
+                </div>
+              )}
 
         {/* Table */}
-        {!loading && (
-          <CustomerTable 
-            customers={currentCustomers} 
-            formatDate={formatDate} 
-            formatPrice={formatPrice}
+              {!loading && (
+                <CustomerTable
+                  customers={currentCustomers}
+                  formatDate={formatDate}
+                  formatPrice={formatPrice}
             totalResults={filteredCustomers.length}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            goToPage={goToPage}
-            goToNextPage={goToNextPage}
-            goToPrevPage={goToPrevPage}
-            onContextMenu={handleContextMenu}
-            onViewDetails={handleViewDetails}
-          />
-        )}
-      </div>
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  goToPage={goToPage}
+                  goToNextPage={goToNextPage}
+                  goToPrevPage={goToPrevPage}
+                  onContextMenu={handleContextMenu}
+                  onViewDetails={handleViewDetails}
+                />
+              )}
+            </div>
 
       {/* Add Customer Modal */}
       <AddCustomerModal
@@ -972,53 +965,46 @@ const CustomerTable = ({
             <span className="font-medium">{Math.min(currentPage * itemsPerPage, totalResults)}</span> of{' '}
             <span className="font-medium">{totalResults}</span> results
           </span>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={goToPrevPage}
-            disabled={currentPage === 1}
-            className={`px-3 py-1 rounded text-sm border ${
-              currentPage === 1 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-            }`}
-          >
-            Previous
-          </button>
-          
-          {getPageNumbers().map((page, index) => (
-            page === '...' ? (
-              <span key={`ellipsis-${index}`} className="px-2 text-gray-500">...</span>
-            ) : (
+          </div>
+
+          {/* Page numbers and navigation */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={goToPrevPage}
+              disabled={currentPage === 1}
+              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            {getPageNumbers().map((page) => (
               <button
                 key={page}
                 onClick={() => goToPage(page)}
-                className={`px-3 py-1 rounded text-sm border ${
+                className={`px-3 py-1 rounded border transition ${
                   currentPage === page
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
                 }`}
               >
                 {page}
               </button>
-            )
-          ))}
-          
-          <button
-            onClick={goToNextPage}
-            disabled={currentPage === totalPages}
+            ))}
+
+            <button
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
             className={`px-3 py-1 rounded text-sm border ${
               currentPage === totalPages 
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200' 
                 : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
             }`}
-          >
-            Next
-          </button>
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
-    </div>
   );
 };
 

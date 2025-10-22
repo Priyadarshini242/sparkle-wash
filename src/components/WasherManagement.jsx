@@ -132,20 +132,20 @@ function WasherManagement() {
           <table className="min-w-full border-gray-300">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border px-4 py-2">Name</th>
-                <th className="border px-4 py-2">Mobile</th>
-                <th className="border px-4 py-2">Email</th>
-                <th className="border px-4 py-2">Status</th>
-                <th className="border px-4 py-2">Actions</th>
+                <th className=" px-4 py-2">Name</th>
+                <th className=" px-4 py-2">Mobile</th>
+                <th className=" px-4 py-2">Email</th>
+                <th className=" px-4 py-2">Status</th>
+                <th className=" px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
               {washers.map((washer) => (
                 <tr key={washer._id} className="text-center">
-                  <td className="border px-4 py-2">{washer.name}</td>
-                  <td className="border px-4 py-2">{washer.mobileNo}</td>
-                  <td className="border px-4 py-2">{washer.email}</td>
-                  <td className="border px-4 py-2">
+                  <td className=" px-4 py-2">{washer.name}</td>
+                  <td className=" px-4 py-2">{washer.mobileNo}</td>
+                  <td className=" px-4 py-2">{washer.email}</td>
+                  <td className=" px-4 py-2">
                     <span
                       className={`px-2 py-1 rounded text-white ${
                         washer.status?.toLowerCase() === "active"
@@ -156,7 +156,7 @@ function WasherManagement() {
                       {washer.status}
                     </span>
                   </td>
-                  <td className="border px-4 py-2">
+                  <td className=" px-4 py-2">
                     <button
                       onClick={() => openEdit(washer)}
                       className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
