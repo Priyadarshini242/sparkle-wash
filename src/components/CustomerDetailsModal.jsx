@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { FaTimes, FaCar, FaEdit, FaTrash, FaPlus, FaUser, FaPhone, FaEnvelope, FaHome, FaDoorClosed, FaCalendarAlt, FaChartBar } from 'react-icons/fa';
 import VehicleWasherAllocationModal from './VehicleWasherAllocationModal';
+import VehicleHistoryModal from './VehicleHistoryModal';
 
-const CustomerDetailsModal = ({
-  isOpen,
-  onClose,
-  customer,
+const CustomerDetailsModal = ({ 
+  isOpen, 
+  onClose, 
+  customer, 
+  vehiclePreview = null,
   onCustomerUpdated,
   onEditVehicle,
   onDeleteVehicle,
@@ -15,13 +18,101 @@ const CustomerDetailsModal = ({
   const [activeTab, setActiveTab] = useState('overview');
   const [isWasherModalOpen, setIsWasherModalOpen] = useState(false);
   const [selectedVehicleForWasher, setSelectedVehicleForWasher] = useState(null);
-  const [localCustomer, setLocalCustomer] = useState(customer);
+  const [packageHistoryByVehicle, setPackageHistoryByVehicle] = useState({});
+  const [customerPackageHistory, setCustomerPackageHistory] = useState([]);
+  const [freshCustomer, setFreshCustomer] = useState(null);
+  const [openHistories, setOpenHistories] = useState({});
+  const [openHistoryModal, setOpenHistoryModal] = useState(false);
+  const [historyModalVehicle, setHistoryModalVehicle] = useState(null);
+  
 
   useEffect(() => {
-    setLocalCustomer(customer);
+    if (!customer) return;
+
+    const fetchFullCustomer = async () => {
+      try {
+        const API = import.meta.env.VITE_API_URL || '';
+        const res = await axios.get(`${API}/customer/${customer._id}`);
+        setFreshCustomer(res.data);
+        return res.data;
+      } catch (err) {
+        console.debug('Failed to fetch full customer', err && err.message);
+        setFreshCustomer(null);
+        return null;
+      }
+    };
+
+    // Fetch legacy customer-level package history
+    const fetchCustomerHistory = async () => {
+      try {
+        const API = import.meta.env.VITE_API_URL || '';
+        const res = await axios.get(`${API}/customer/${customer._id}/package-history`);
+        const list = res.data.packageHistory || [];
+        setCustomerPackageHistory(list);
+        // also register under legacy key for UI consistency
+        setPackageHistoryByVehicle(prev => ({ ...(prev || {}), legacy: { loading: false, packageHistory: list, loaded: true, visible: false } }));
+      } catch (err) {
+        // ignore errors silently for now
+      }
+    };
+
+    const fetchVehicleHistories = async (freshData) => {
+      if (!customer.vehicles || customer.vehicles.length === 0) return;
+      const map = {};
+      await Promise.all(customer.vehicles.map(async (v) => {
+        const vid = v._id ? String(v._id) : null;
+        if (!vid) return;
+        // Prefer freshly fetched customer data (passed in) vehicle.packageHistory if available
+        const freshV = freshData?.vehicles?.find(x => String(x._id) === vid);
+        if (freshV && freshV.packageHistory && freshV.packageHistory.length > 0) {
+          console.debug('Using freshCustomer.vehicle.packageHistory for', vid, freshV.packageHistory);
+          map[vid] = { loading: false, packageHistory: freshV.packageHistory, loaded: true, visible: false };
+          return;
+        }
+        // Fallback to original customer prop's packageHistory
+        if (v.packageHistory && v.packageHistory.length > 0) {
+          console.debug('Using inline vehicle.packageHistory for', vid, v.packageHistory);
+          map[vid] = { loading: false, packageHistory: v.packageHistory, loaded: true, visible: false };
+          return;
+        }
+        try {
+          const res = await axios.get(`/api/customer/${customer._id}/vehicles/${vid}/package-history`);
+          console.debug('Fetched packageHistory for vehicle', vid, res.data.packageHistory);
+          map[vid] = { loading: false, packageHistory: res.data.packageHistory || [], loaded: true, visible: false };
+        } catch (err) {
+          console.debug('Failed to fetch packageHistory for vehicle', vid, err && err.message);
+          map[vid] = { loading: false, packageHistory: [], loaded: true, visible: false };
+        }
+      }));
+      setPackageHistoryByVehicle(prev => ({ ...(prev || {}), ...map }));
+    };
+
+    // Initialize sequence: fetch full customer first, then histories
+    (async () => {
+      const full = await fetchFullCustomer();
+      await fetchCustomerHistory();
+      await fetchVehicleHistories(full);
+    })();
   }, [customer]);
 
-  if (!isOpen || !localCustomer) return null;
+  // Lock body scroll while modal is open
+  useEffect(() => {
+    if (isOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    }
+    return;
+  }, [isOpen]);
+
+  useEffect(() => {
+    console.debug('CustomerDetailsModal - customer prop:', customer);
+    console.debug('CustomerDetailsModal - freshCustomer:', freshCustomer);
+    console.debug('CustomerDetailsModal - packageHistoryByVehicle keys:', Object.keys(packageHistoryByVehicle || {}));
+  }, [customer, freshCustomer, packageHistoryByVehicle]);
+
+  // Ensure we still short-circuit rendering when modal is closed or customer missing
+  if (!isOpen || !customer) return null;
 
   const hasMultipleVehicles = localCustomer.hasMultipleVehicles || (localCustomer.totalVehicles && localCustomer.totalVehicles > 1);
 
@@ -60,8 +151,16 @@ const CustomerDetailsModal = ({
     }
   };
 
+  const getDaysFromWashingDays = (washingDays) => {
+    if (!washingDays || !Array.isArray(washingDays) || washingDays.length === 0) return null;
+    const names = {
+      1: 'Mon', 2: 'Tue', 3: 'Wed', 4: 'Thu', 5: 'Fri', 6: 'Sat', 7: 'Sun'
+    };
+    return washingDays.map(d => names[d] || d).join(', ');
+  };
+
   // Vehicle Card Component
-  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher }) => (
+  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher, isPreview }) => (
     <div className={`border rounded-lg p-4 ${isMultiVehicle ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-2">
@@ -90,7 +189,7 @@ const CustomerDetailsModal = ({
         )}
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
+  <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">Car Model:</label>
           <p className="text-sm text-gray-900 font-medium">{vehicle.carModel || 'N/A'}</p>
@@ -107,9 +206,59 @@ const CustomerDetailsModal = ({
           <label className="block text-sm font-medium text-gray-600 mb-1">Package:</label>
           <p className="text-sm text-purple-700 font-semibold">{vehicle.packageName || 'N/A'}</p>
         </div>
+        {/* Washing Schedule display */}
+        <div>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Washing Schedule:</label>
+          <p className="text-sm text-gray-900 font-medium">
+            {(
+              // priority: explicit washingDayNames -> washingSchedule.washingDays -> scheduleType
+              vehicle.washingDayNames && vehicle.washingDayNames.length > 0
+            ) ? vehicle.washingDayNames.join(', ') : (
+              vehicle.washingSchedule && vehicle.washingSchedule.washingDays && vehicle.washingSchedule.washingDays.length > 0
+                ? getDaysFromWashingDays(vehicle.washingSchedule.washingDays)
+                : (vehicle.washingSchedule && vehicle.washingSchedule.scheduleType) ? getScheduleDescription(vehicle.washingSchedule.scheduleType) : (vehicle.scheduleType ? getScheduleDescription(vehicle.scheduleType) : 'Not Set')
+            )}
+          </p>
+        </div>
+          <div>
+           <label className="block text-sm font-medium text-gray-600 mb-1">Package Start Date:</label>
+            {/* Fallbacks: vehicle.packageStartDate -> vehicle.subscriptionStart -> customer.packageStartDate */}
+            <p className="text-sm text-gray-900 font-medium">{
+              (vehicle.packageStartDate || vehicle.subscriptionStart || (customer && customer.packageStartDate))
+                ? formatDate(vehicle.packageStartDate || vehicle.subscriptionStart || (customer && customer.packageStartDate))
+                : 'N/A'
+            }</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Package End Date:</label>
+            {/* Fallbacks: vehicle.packageEndDate -> vehicle.subscriptionEnd -> customer.packageEndDate */}
+            <p className="text-sm text-gray-900 font-medium">{
+              (vehicle.packageEndDate  || (customer && customer.packageEndDate))
+                ? formatDate(vehicle.packageEndDate || (customer && customer.packageEndDate))
+                : 'N/A'
+            }</p>
+          </div>
       </div>
 
-      {/* Wash Statistics */}
+
+      {/* Package History (per-vehicle) */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="flex items-center space-x-2 mb-3">
+          <FaCalendarAlt className="h-4 w-4 text-gray-600" />
+          <h5 className="text-sm font-medium text-gray-700">Package History</h5>
+        </div>
+        <div>
+          <button
+            onClick={() => {
+              setHistoryModalVehicle(vehicle);
+              setOpenHistoryModal(true);
+            }}
+            className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800 hover:bg-gray-200"
+          >
+            View History
+          </button>
+        </div>
+      </div>
       <div className="mt-4 pt-4 border-t border-gray-200">
         <div className="flex items-center space-x-2 mb-3">
           <FaChartBar className="h-4 w-4 text-gray-600" />
@@ -182,6 +331,9 @@ const CustomerDetailsModal = ({
           </div>
         )}
       </div>
+      {isPreview && (
+        <div className="mt-3 text-sm text-gray-500">(Preview - not saved yet)</div>
+      )}
     </div>
   );
 
@@ -195,7 +347,7 @@ const CustomerDetailsModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+  <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto">
         
         {/* Header */}
         <div className={`p-6 border-b ${hasMultipleVehicles ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-blue-600'}`}>
@@ -303,16 +455,7 @@ const CustomerDetailsModal = ({
                   <FaCalendarAlt className="h-5 w-5 text-green-600" />
                   <h3 className="text-lg font-semibold text-gray-900">Subscription Details</h3>
                 </div>
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Subscription Start</label>
-                    <p className="text-lg text-gray-900">{formatDate(localCustomer.subscriptionStart)}</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Subscription End</label>
-                    <p className="text-lg text-gray-900">{formatDate(localCustomer.subscriptionEnd)}</p>
-                  </div>
-                </div>
+                {/* Package history is shown per-vehicle in the Vehicles tab. */}
               </div>
             </div>
           )}
@@ -331,8 +474,15 @@ const CustomerDetailsModal = ({
               </div>
               
               <div className="grid gap-4">
-                {localCustomer.vehicles && localCustomer.vehicles.length > 0 ? (
-                  localCustomer.vehicles.map((vehicle, index) => (
+                {vehiclePreview && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Preview Vehicle</h4>
+                    <VehicleCard vehicle={vehiclePreview} index={0} isMultiVehicle={hasMultipleVehicles} onAllocateWasher={handleAllocateWasher} isPreview />
+                  </div>
+                )}
+
+                {customer.vehicles && customer.vehicles.length > 0 ? (
+                  customer.vehicles.map((vehicle, index) => (
                     <VehicleCard 
                       key={vehicle._id || index} 
                       vehicle={vehicle} 
@@ -349,7 +499,9 @@ const CustomerDetailsModal = ({
                       vehicleNo: customer.vehicleNo,
                       carType: customer.carType,
                       packageName: customer.packageName,
-                      washerId: customer.washerId
+                      washerId: customer.washerId,
+                      packageStartDate: customer.packageStartDate,
+                      packageEndDate: customer.packageEndDate
                     }} 
                     index={0} 
                     isMultiVehicle={false}
@@ -389,10 +541,17 @@ const CustomerDetailsModal = ({
         onClose={handleWasherModalClose}
         customer={localCustomer}
         vehicle={selectedVehicleForWasher}
-        onWasherAllocated={handleWasherAllocated}
+        onWasherAllocated={onCustomerUpdated}
+      />
+      {/* Vehicle History Modal */}
+      <VehicleHistoryModal
+        isOpen={openHistoryModal}
+        onClose={() => { setOpenHistoryModal(false); setHistoryModalVehicle(null); }}
+        customer={freshCustomer || customer}
+        vehicle={historyModalVehicle}
       />
     </div>
   );
-};
+}
 
 export default CustomerDetailsModal;

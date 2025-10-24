@@ -158,7 +158,11 @@ const WasherDashboard = () => {
     for (let i = 1; i <= 7; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      // Build local YYYY-MM-DD to avoid UTC shift from toISOString
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${yyyy}-${mm}-${dd}`;
       const dayName = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       options.push({ value: dateStr, label: dayName });
     }
