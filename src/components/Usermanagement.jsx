@@ -117,6 +117,10 @@ function Usermanagement() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
+          // ✅ Correct way
+    const customersArray = data.customers || [];
+    setCustomers(customersArray);
       
       const data = await response.json();
       console.log('Fetched customers:', data); // Debug log
