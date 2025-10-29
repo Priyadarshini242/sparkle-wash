@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CalendarDaysIcon, BuildingOffice2Icon, FunnelIcon } from '@heroicons/react/24/outline';
 import Popup from "./Popup";
+import { useGetWasherDashboardQuery, useCompleteWashMutation } from '../store/apiSlice';
 
 const WasherDashboard = () => {
   const [washer, setWasher] = useState(null);
@@ -14,6 +15,7 @@ const WasherDashboard = () => {
   const [completingWash, setCompletingWash] = useState(null);
   const [completWash, setCompletWash] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
   
   // Filter states
   const [selectedDate, setSelectedDate] = useState('today');
@@ -33,56 +35,135 @@ const WasherDashboard = () => {
 
     const washerData = JSON.parse(washerAuth);
     setWasher(washerData);
-    fetchWasherData(washerData._id);
+    // API data will be loaded via RTK Query hook (see below)
   }, [navigate, selectedDate, selectedApartment, selectedCarType]);
 
-  const fetchWasherData = async (washerId, date = selectedDate, apartment = selectedApartment, carType = selectedCarType) => {
+  
+
+  // Compute IST end of current day timestamp
+  const getISTEndOfToday = () => {
+    // IST is UTC+5:30
+    const now = new Date();
+    // get UTC components then add +5:30
+    const utcYear = now.getUTCFullYear();
+    const utcMonth = now.getUTCMonth();
+    const utcDate = now.getUTCDate();
+    // Build IST date based on UTC + 5.5 hours
+    const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffsetMs);
+    const end = new Date(Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate(), 18, 29, 59, 999));
+    // The end above is computed using UTC fields so it aligns to IST 23:59:59.999
+    return end.getTime();
+  };
+
+  // Return YYYY-MM-DD for IST 'today' (no time)
+  const getISTTodayDateString = () => {
+    const now = new Date();
+    const istOffsetMs = (5 * 60 + 30) * 60 * 1000;
+    const istNow = new Date(now.getTime() + istOffsetMs);
+    const yyyy = istNow.getUTCFullYear();
+    const mm = String(istNow.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(istNow.getUTCDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const isDateAfterISTToday = (dateStr) => {
     try {
-      setLoading(true);
-      let url = `${import.meta.env.VITE_API_URL}/washer/dashboard/${washerId}`;
-      const params = new URLSearchParams();
-      
-      if (date && date !== 'today') {
-        params.append('date', date);
-      }
-      if (apartment && apartment !== 'all') {
-        params.append('apartment', apartment);
-      }
-      if (carType && carType !== 'all') {
-        params.append('carType', carType);
-      }
-      
-      if (params.toString()) {
-        url += `?${params.toString()}`;
-      }
-      
-      const response = await fetch(url);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('🔍 Washer Dashboard data received:', data); // Debug log
-        console.log('🔍 Customers array:', data.customers); // Debug log
-        console.log('🔍 Sample customer:', data.customers?.[0]); // Debug log
-        
-        // Update washer data with the response
-        setWasher(data.washer);
-        setCustomers(data.customers || []);
-        setApartments(data.apartments || []);
-        setCarTypes(data.carTypes || []); // Set car types from response
-      } else {
-        throw new Error('Failed to fetch washer data');
-      }
-    } catch (error) {
-      console.error('Error fetching washer data:', error);
-      setError('Failed to load dashboard data');
-    } finally {
-      setLoading(false);
+      if (!dateStr) return false;
+      const istToday = getISTTodayDateString();
+      // Compare as strings YYYY-MM-DD works lexicographically
+      return dateStr > istToday;
+    } catch (err) {
+      return false;
     }
   };
 
-  const markWashCompleted = async (customerId, washType) => {
+  const isAssignmentDisabled = (assignmentId) => {
+    if (!assignmentId) return false;
+    const assignment = (customers || []).find(c => c._id === assignmentId);
+    if (!assignment) return false;
+    // server-provided flag takes precedence
+    if (assignment.washedToday) return true;
+    if (assignment.disabledUntil && Date.now() <= assignment.disabledUntil) return true;
+    return false;
+  };
+
+  // Determine whether a customer/assignment has interior cleaning available
+  const hasInteriorOption = (customerObj) => {
+    if (!customerObj) return false;
+    // 1) If packageSpecs are present (from PackageSelectionModal) use interiorPerMonth
+    if (customerObj.packageSpecs && typeof customerObj.packageSpecs.interiorPerMonth === 'number') {
+      return customerObj.packageSpecs.interiorPerMonth > 0;
+    }
+    // 2) Backwards-compatible fields from API: interiorCleaning or interiorCount
+    if (typeof customerObj.interiorCleaning === 'number') return customerObj.interiorCleaning > 0;
+    if (typeof customerObj.interiorCount === 'number') return customerObj.interiorCount > 0;
+    if (customerObj.interiorCleaning === true) return true;
+    // 3) Fallback to packageName heuristics (keep previous behavior plus Basic)
+    const pn = (customerObj.packageName || '').toLowerCase();
+    if (!pn) return false;
+    return pn.includes('classic') || pn.includes('premium') || pn.includes('basic');
+  };
+
+  // No client-side persistent disable map; server provides `washedToday` or `disabledUntil`.
+
+
+  // Use RTK Query to fetch dashboard data. We keep local states for loading/errors for compatibility with existing UI.
+  // Pass the selectedDate value directly so that 'all' is sent to the backend
+  const washerQueryArg = washer ? { 
+    washerId: washer._id, 
+    date: selectedDate, // 'all' | 'today' | YYYY-MM-DD
+    apartment: selectedApartment,
+    carType: selectedCarType
+  } : null;
+  const { data: dashboardData, isFetching: dashboardFetching, error: dashboardError, refetch: refetchDashboard } = useGetWasherDashboardQuery(washerQueryArg, { 
+    skip: !washer,
+    refetchOnMountOrArgChange: true
+  });
+
+  // Mirror RTK Query results into local state used by the component
+  useEffect(() => {
+    if (dashboardData) {
+      setWasher(dashboardData.washer);
+      setCustomers(dashboardData.customers || []);
+      setApartments(dashboardData.apartments || []);
+      setCarTypes(dashboardData.carTypes || []);
+      setError(null);
+    } else if (dashboardError) {
+      const errorMessage = dashboardError?.data?.message || dashboardError?.error || 'Failed to load dashboard data';
+      console.error('Dashboard error:', dashboardError);
+      setError(errorMessage);
+    }
+    setLoading(dashboardFetching);
+  }, [dashboardData, dashboardFetching, dashboardError]);
+
+  const [completeWash] = useCompleteWashMutation();
+
+  const markWashCompleted = async (payload, washType) => {
+    // payload may be a string (assignment id or customerId) or an object { customerId, vehicleId }
+    let customerId = null;
+    let vehicleId = null;
+    let assignmentId = null;
+
+    if (typeof payload === 'string') {
+      // payload might be 'customerId-vehicleId' or just 'customerId'
+      const parts = payload.split('-');
+      if (parts.length === 2) {
+        customerId = parts[0];
+        vehicleId = parts[1];
+        assignmentId = payload;
+      } else {
+        customerId = payload;
+        assignmentId = payload;
+      }
+    } else if (payload && typeof payload === 'object') {
+      customerId = payload.customerId;
+      vehicleId = payload.vehicleId;
+      assignmentId = payload.vehicleId ? `${payload.customerId}-${payload.vehicleId}` : payload.customerId;
+    }
+
     if(washType === 'exterior'){
-        setCompletingWash(customerId);
+        setCompletingWash(assignmentId);
     }
     try {
       console.log('Washer data:', washer); // Debug log
@@ -92,40 +173,186 @@ const WasherDashboard = () => {
         throw new Error('Washer data not loaded properly');
       }
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/complete-wash`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          customerId,
-          washerId: washer._id,
-          washerName: washer.name,
-          washType: washType
-        }),
-      });
+      const requestBody = {
+        customerId,
+        vehicleId,
+        washerId: washer._id ? String(washer._id) : washer._id,
+        washerName: washer.name,
+        washType: washType
+      };
+      console.log('🔁 complete-wash request body:', requestBody);
 
-      if (response.ok) {
-        const result = await response.json();
-        // Update the customer in the local state
-        setCustomers(prevCustomers => 
-          prevCustomers.map(customer => 
-            customer._id === customerId 
-              ? { ...customer, pendingWashes: customer.pendingWashes - 1, completedWashes: customer.completedWashes + 1 }
-              : customer
-          )
-        );
-        alert(`Wash completed successfully! Customer has ${result.pendingWashes} washes remaining.`);
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to mark wash as completed');
-      }
+      const result = await completeWash(requestBody).unwrap();
+      // Build lastWash info from washer + response
+      const nowIso = new Date().toISOString();
+      const disabledUntil = result.disabledUntil || null;
+
+      // Single optimistic update including last wash details
+      setCustomers(prevCustomers => 
+        prevCustomers.map(customer => {
+          if (customer._id !== assignmentId) return customer;
+          return {
+            ...customer,
+            pendingWashes: Math.max(0, (customer.pendingWashes || 0) - 1),
+            completedWashes: (customer.completedWashes || 0) + 1,
+            washedToday: true,
+            disabledUntil,
+            // Keep backward-compatible lastWashDate field and a detailed lastWash object
+            lastWashDate: nowIso,
+            lastWash: {
+              date: nowIso,
+              washerId: washer?._id || null,
+              washerName: washer?.name || null,
+              washType: washType
+            }
+          };
+        })
+      );
+
+      // Refresh server data shortly to ensure any other computed fields (counts) are up-to-date
+      setTimeout(() => refetchDashboard && refetchDashboard(), 200);
+
+      alert(`Wash completed successfully! Customer has ${result.pendingWashes} washes remaining.`);
     } catch (error) {
       console.error('Error completing wash:', error);
       alert(`Failed to complete wash: ${error.message}`);
     } finally {
       setCompletingWash(null);
     }
+  };
+
+  // Wrapper that checks disabled state and early-completion before calling markWashCompleted
+  const handleMarkComplete = async (customerObj, washType) => {
+    const assignmentId = customerObj?._id;
+    if (!assignmentId) return;
+    if (isAssignmentDisabled(assignmentId)) {
+      alert('This vehicle has already been completed for the day.');
+      return;
+    }
+
+    // Early completion check:
+    // - Only consider when a specific date is selected (not 'today' or 'all')
+    // - If the selected date is in the future relative to IST today AND the selected weekday
+    //   is one of the vehicle's scheduled washing days (from washingSchedule or washingDayNames
+    //   or inferred from package), prompt confirmation.
+    if (selectedDate && selectedDate !== 'today' && selectedDate !== 'all') {
+      try {
+        // day number in washing schedule format: Mon=1 .. Sun=7
+        const selDate = new Date(selectedDate + 'T00:00:00');
+        const jsDay = selDate.getDay(); // 0 (Sun) .. 6 (Sat)
+        const selWashingDay = jsDay === 0 ? 7 : jsDay; // convert to 1..7 (Sun->7)
+
+        // derive washingDays array (numbers 1..7) from available assignment fields
+        let washingDays = [];
+        if (customerObj.washingSchedule && Array.isArray(customerObj.washingSchedule.washingDays)) {
+          washingDays = customerObj.washingSchedule.washingDays;
+        } else if (Array.isArray(customerObj.washingDayNames) && customerObj.washingDayNames.length > 0) {
+          // map names like 'Mon' or 'Monday' to numbers
+          const nameToNum = (name) => {
+            if (!name) return null;
+            const n = String(name).toLowerCase();
+            if (n.startsWith('mon')) return 1;
+            if (n.startsWith('tue')) return 2;
+            if (n.startsWith('wed')) return 3;
+            if (n.startsWith('thu')) return 4;
+            if (n.startsWith('fri')) return 5;
+            if (n.startsWith('sat')) return 6;
+            if (n.startsWith('sun')) return 7;
+            return null;
+          };
+          washingDays = customerObj.washingDayNames.map(nameToNum).filter(Boolean);
+        } else if (customerObj.packageName) {
+          // fallback: infer common schedules by package name
+          if (customerObj.packageName === 'Basic') washingDays = [1,4];
+          else if (customerObj.packageName === 'Moderate' || customerObj.packageName === 'Classic') washingDays = [1,3,5];
+        }
+
+        const selDateIsFuture = isDateAfterISTToday(selectedDate);
+        const matches = Array.isArray(washingDays) && washingDays.includes(selWashingDay);
+            if (selDateIsFuture && matches) {
+              const selWeekdayLong = selDate.toLocaleDateString('en-US', { weekday: 'long' });
+              // Open confirm modal instead of window.confirm
+              setConfirmModal({
+                isOpen: true,
+                title: 'Confirm Early Completion',
+                message: `You are attempting to complete the wash before the scheduled day (${selWeekdayLong}).\nAre you sure you want to complete it early?`,
+                onConfirm: async () => {
+                  setConfirmModal(prev => ({ ...prev, isOpen: false }));
+                  await markWashCompleted(assignmentId, washType);
+                }
+              });
+              return;
+            }
+      } catch (err) {
+        console.debug('Early completion check failed', err && err.message);
+      }
+    }
+
+    // Proceed to complete
+    await markWashCompleted(assignmentId, washType);
+  };
+
+  const handleCompleteWithInterior = async (customerObj) => {
+    const assignmentId = customerObj?._id;
+    if (!assignmentId) return;
+    if (isAssignmentDisabled(assignmentId)) {
+      alert('This vehicle has already been completed for the day.');
+      return;
+    }
+
+    if (selectedDate && selectedDate !== 'today' && selectedDate !== 'all') {
+      try {
+        const selDate = new Date(selectedDate + 'T00:00:00');
+        const jsDay = selDate.getDay();
+        const selWashingDay = jsDay === 0 ? 7 : jsDay;
+
+        let washingDays = [];
+        if (customerObj.washingSchedule && Array.isArray(customerObj.washingSchedule.washingDays)) {
+          washingDays = customerObj.washingSchedule.washingDays;
+        } else if (Array.isArray(customerObj.washingDayNames) && customerObj.washingDayNames.length > 0) {
+          const nameToNum = (name) => {
+            if (!name) return null;
+            const n = String(name).toLowerCase();
+            if (n.startsWith('mon')) return 1;
+            if (n.startsWith('tue')) return 2;
+            if (n.startsWith('wed')) return 3;
+            if (n.startsWith('thu')) return 4;
+            if (n.startsWith('fri')) return 5;
+            if (n.startsWith('sat')) return 6;
+            if (n.startsWith('sun')) return 7;
+            return null;
+          };
+          washingDays = customerObj.washingDayNames.map(nameToNum).filter(Boolean);
+        } else if (customerObj.packageName) {
+          if (customerObj.packageName === 'Basic') washingDays = [1,4];
+          else if (customerObj.packageName === 'Moderate' || customerObj.packageName === 'Classic') washingDays = [1,3,5];
+        }
+
+        const selDateIsFuture = isDateAfterISTToday(selectedDate);
+        const matches = Array.isArray(washingDays) && washingDays.includes(selWashingDay);
+        if (selDateIsFuture && matches) {
+          const selWeekdayLong = selDate.toLocaleDateString('en-US', { weekday: 'long' });
+          setConfirmModal({
+            isOpen: true,
+            title: 'Confirm Early Completion',
+            message: `You are attempting to complete the wash before the scheduled day (${selWeekdayLong}).\nAre you sure you want to complete it early?`,
+            onConfirm: async () => {
+              setConfirmModal(prev => ({ ...prev, isOpen: false }));
+              // After confirming early, open interior popup
+              setIsOpen(true);
+              setCompletWash(assignmentId);
+            }
+          });
+          return;
+        }
+      } catch (err) {
+        console.debug('Early completion check failed', err && err.message);
+      }
+    }
+
+    // Open interior popup after confirmation
+    setIsOpen(true);
+    setCompletWash(assignmentId);
   };
 
   const handleLogout = () => {
@@ -426,14 +653,14 @@ const WasherDashboard = () => {
                           More Details
                         </button>
                           <button
-                          onClick={() => markWashCompleted(customer._id, 'exterior')}
-                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            customer.pendingWashes > 0 && completingWash !== customer._id
-                              ? 'bg-green-600 text-white hover:bg-green-700'
-                              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                          }`}
-                        >
+                            onClick={() => handleMarkComplete(customer, 'exterior')}
+                            disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id || isAssignmentDisabled(customer._id)}
+                            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                              customer.pendingWashes > 0 && completingWash !== customer._id && !isAssignmentDisabled(customer._id)
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                          >
                           {completingWash === customer._id ? (
                             <div className="flex items-center space-x-2">
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -443,22 +670,19 @@ const WasherDashboard = () => {
                             'Mark Complete'
                           )}
                         </button>
-                        {(customer.packageName === 'Classic' || customer.packageName === 'Premium') && 
+                        {hasInteriorOption(customer) && (
                         <button
-                          onClick={() => {
-                            setIsOpen(true)
-                            setCompletWash(customer._id);
-                          }}
-                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
+                          onClick={() => handleCompleteWithInterior(customer)}
+                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id || isAssignmentDisabled(customer._id)}
                           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            customer.pendingWashes > 0 && completWash !== customer._id
+                            customer.pendingWashes > 0 && completingWash !== customer._id && !isAssignmentDisabled(customer._id)
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
                         >
                             Mark Complete With Interior
                         </button>
-                        }
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -587,10 +811,10 @@ const WasherDashboard = () => {
                       {/* Action Buttons */}
                       <div className="flex justify-end space-x-3">
                         <button
-                          onClick={() => markWashCompleted(customer._id, 'exterior')}
-                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
+                          onClick={() => handleMarkComplete(customer, 'exterior')}
+                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id || isAssignmentDisabled(customer._id)}
                           className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            customer.pendingWashes > 0 && completingWash !== customer._id
+                            customer.pendingWashes > 0 && completingWash !== customer._id && !isAssignmentDisabled(customer._id)
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
@@ -604,22 +828,19 @@ const WasherDashboard = () => {
                             'Mark Complete'
                           )}
                         </button>
-                        {(customer.packageName === 'Classic' || customer.packageName === 'Premium') && 
+                        {hasInteriorOption(customer) && (
                         <button
-                          onClick={() => {
-                            setIsOpen(true)
-                            setCompletWash(customer._id);
-                          }}
-                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id}
+                          onClick={() => handleCompleteWithInterior(customer)}
+                          disabled={!customer.pendingWashes || customer.pendingWashes <= 0 || completingWash === customer._id || isAssignmentDisabled(customer._id)}
                           className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                            customer.pendingWashes > 0 && completingWash !== customer._id
+                            customer.pendingWashes > 0 && completingWash !== customer._id && !isAssignmentDisabled(customer._id)
                               ? 'bg-green-600 text-white hover:bg-green-700'
                               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           }`}
                         >
                             Mark Complete With Interior
                         </button>
-                        }
+                        )}
                       </div>
                     </div>
                   )}
@@ -630,7 +851,26 @@ const WasherDashboard = () => {
           )}
         </div>
       </div>
-      <Popup isOpen={isOpen} completWash={completWash} setCompletWash={setCompletWash} setIsOpen={setIsOpen} markWashCompleted={markWashCompleted}/>
+      <Popup
+        isOpen={isOpen}
+        completWash={completWash}
+        setCompletWash={setCompletWash}
+        setIsOpen={setIsOpen}
+        markWashCompleted={markWashCompleted}
+        title={'Please Confirm'}
+        message={'Wash Completion will be marked as Both Exterior and Interior. Are you sure?'}
+        confirmLabel={'Confirm'}
+        cancelLabel={'Cancel'}
+      />
+      <Popup
+        isOpen={confirmModal.isOpen}
+        setIsOpen={(open) => setConfirmModal(prev => ({ ...prev, isOpen: open }))}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        confirmLabel="Confirm"
+        cancelLabel="Cancel"
+      />
     </div>
   );
 };

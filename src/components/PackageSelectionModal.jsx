@@ -1,53 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useGetPackagesQuery } from '../store/apiSlice';
 
 const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
-  const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [selectedCarType, setSelectedCarType] = useState('');
-
-  // Fetch packages when modal opens
-  useEffect(() => {
-    const fetchPackages = async () => {
-      if (!isOpen) return;
-      
-      console.log('PackageSelectionModal opened, fetching packages...');
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const apiUrl = `${import.meta.env.VITE_API_URL}/package/package`;
-        console.log('Fetching packages from:', apiUrl);
-        const response = await fetch(apiUrl);
-        console.log('Package fetch response:', response.status, response.statusText);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Packages received:', data);
-          setPackages(data);
-        } else {
-          console.error('Failed to fetch packages:', response.status);
-          setError(`Failed to load packages: ${response.status}`);
-        }
-      } catch (error) {
-        console.error('Error fetching packages:', error);
-        setError('Network error. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPackages();
-  }, [isOpen]);
+  // Use RTK Query hook to fetch packages
+  const { data: packages = [], isLoading, isError } = useGetPackagesQuery(undefined, { skip: !isOpen });
 
   // Filter packages by car type
-  const filteredPackages = selectedCarType 
-    ? packages.filter(pkg => pkg.carType === selectedCarType)
-    : packages;
+  const filteredPackages = selectedCarType ? packages.filter(pkg => pkg.carType === selectedCarType) : packages;
 
   // Handle package selection
   const handleSelectPackage = (packageItem) => {
-    onPackageSelect(packageItem);
+    // augment package with derived schedule rules so callers (add customer / add vehicle) get the correct details
+    const specs = getPackageSpecs(packageItem);
+    // include the currently selected car type (if user selected one) so caller can store it
+    const chosenCarType = selectedCarType || packageItem.carType || '';
+    onPackageSelect({ ...packageItem, specs, chosenCarType });
   };
 
   // Format price for display
@@ -61,6 +29,43 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
 
   // Get unique car types
   const carTypes = [...new Set(packages.map(pkg => pkg.carType))];
+
+  // Derive package specs according to requested rules
+  const getPackageSpecs = (pkg) => {
+    const name = (pkg.name || '').toLowerCase();
+    // default values (fallback to package fields if available)
+    let exteriorPerMonth = pkg.washCountPerMonth || 0;
+    let exteriorPerWeek = pkg.washCountPerWeek || 0;
+    let interiorPerMonth = pkg.interiorCleaning || 0;
+    let interiorSchedule = '';
+
+    if (name.includes('basic')) {
+      exteriorPerMonth = 8;
+      exteriorPerWeek = 2; // 2 per week
+      interiorPerMonth = 2; // two interiors per month
+      interiorSchedule = 'Bi-weekly (every ~15 days) — 2 per month';
+    } else if (name.includes('classic')) {
+      exteriorPerMonth = 12;
+      exteriorPerWeek = 3; // 3 per week
+      interiorPerMonth = 2; // two interiors per month
+      interiorSchedule = 'Twice per month';
+    } else if (name.includes('moderate')) {
+      exteriorPerMonth = 12;
+      exteriorPerWeek = 3; // 3 per week
+      interiorPerMonth = 0; // no interior
+      interiorSchedule = 'No interior cleaning included';
+    } else {
+      // If package doesn't match known names, prefer API values and generic schedule
+      interiorSchedule = interiorPerMonth > 0 ? `${interiorPerMonth} per month` : 'No interior cleaning included';
+    }
+
+    return {
+      exteriorPerMonth,
+      exteriorPerWeek,
+      interiorPerMonth,
+      interiorSchedule
+    };
+  };
 
   if (!isOpen) return null;
 
@@ -99,19 +104,19 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
 
           {/* Package List */}
           <div className="max-h-96 overflow-y-auto">
-            {loading && (
+            {isLoading && (
               <div className="flex justify-center py-8">
                 <div className="text-gray-500">Loading packages...</div>
               </div>
             )}
 
-            {error && (
+            {isError && (
               <div className="flex justify-center py-8">
-                <div className="text-red-500">{error}</div>
+                <div className="text-red-500">Failed to load packages</div>
               </div>
             )}
 
-            {!loading && !error && filteredPackages.length === 0 && (
+            {!isLoading && !isError && filteredPackages.length === 0 && (
               <div className="flex justify-center py-8">
                 <div className="text-gray-500">
                   {selectedCarType 
@@ -122,9 +127,11 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
               </div>
             )}
 
-            {!loading && !error && filteredPackages.length > 0 && (
+            {!isLoading && !isError && filteredPackages.length > 0 && (
               <div className="space-y-3">
-                {filteredPackages.map((pkg) => (
+                {filteredPackages.map((pkg) => {
+                  const specs = getPackageSpecs(pkg);
+                  return (
                   <div
                     key={pkg._id}
                     onClick={() => handleSelectPackage(pkg)}
@@ -136,7 +143,7 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
                           {pkg.name}
                         </h4>
                         <p className="text-sm text-gray-600">
-                          {pkg.carType.charAt(0).toUpperCase() + pkg.carType.slice(1)} Car
+                          {pkg.carType?.charAt(0).toUpperCase() + pkg.carType?.slice(1)} Car
                         </p>
                       </div>
                       <div className="text-right">
@@ -149,20 +156,20 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
                     
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-gray-600">Weekly Washes:</span>
-                        <span className="ml-1 font-medium">{pkg.washCountPerWeek}</span>
+                        <span className="text-gray-600">Weekly Exterior Washes:</span>
+                        <span className="ml-1 font-medium">{specs.exteriorPerWeek}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Monthly Washes:</span>
-                        <span className="ml-1 font-medium">{pkg.washCountPerMonth}</span>
+                        <span className="text-gray-600">Monthly Exterior Washes:</span>
+                        <span className="ml-1 font-medium">{specs.exteriorPerMonth}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Interior Clean:</span>
-                        <span className="ml-1 font-medium">{pkg.interiorCleaning}</span>
+                        <span className="text-gray-600">Interior Cleans / month:</span>
+                        <span className="ml-1 font-medium">{specs.interiorPerMonth}</span>
                       </div>
                       <div>
-                        <span className="text-gray-600">Exterior Wax:</span>
-                        <span className="ml-1 font-medium">{pkg.exteriorWaxing}</span>
+                        <span className="text-gray-600">Interior Schedule:</span>
+                        <span className="ml-1 font-medium">{specs.interiorSchedule}</span>
                       </div>
                     </div>
 
@@ -176,7 +183,8 @@ const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
                       </button>
                     </div>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
