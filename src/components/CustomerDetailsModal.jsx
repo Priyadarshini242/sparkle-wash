@@ -264,17 +264,17 @@ const CustomerDetailsModal = ({
           <FaChartBar className="h-4 w-4 text-gray-600" />
           <h5 className="text-sm font-medium text-gray-700">Wash Statistics</h5>
         </div>
-        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center">
           <div className="bg-white rounded-lg p-3 border">
-            <div className="text-2xl font-bold text-orange-600">{vehicle.pendingWashes || customer.pendingWashes || 0}</div>
+            <div className="text-2xl font-bold text-orange-600">{(vehicle.pendingWashes != null) ? vehicle.pendingWashes : 0}</div>
             <div className="text-xs text-gray-600">Pending</div>
           </div>
           <div className="bg-white rounded-lg p-3 border">
-            <div className="text-2xl font-bold text-green-600">{vehicle.completedWashes || customer.completedWashes || 0}</div>
+            <div className="text-2xl font-bold text-green-600">{(vehicle.completedWashes != null) ? vehicle.completedWashes : 0}</div>
             <div className="text-xs text-gray-600">Completed</div>
           </div>
           <div className="bg-white rounded-lg p-3 border">
-            <div className="text-2xl font-bold text-blue-600">{vehicle.totalMonthlyWashes || customer.totalMonthlyWashes || 0}</div>
+            <div className="text-2xl font-bold text-blue-600">{(vehicle.totalMonthlyWashes != null) ? vehicle.totalMonthlyWashes : 0}</div>
             <div className="text-xs text-gray-600">Total</div>
           </div>
         </div>

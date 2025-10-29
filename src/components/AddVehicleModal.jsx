@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import PackageSelectionModal from './PackageSelectionModal';
 
 const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewChange }) => {
   const [vehicleData, setVehicleData] = useState({
     vehicleNo: '',
     carModel: '',
-    carType: 'sedan',
+    carType: '',
     packageId: '',
     packageName: '',
     scheduleType: 'schedule1'
@@ -13,29 +14,10 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewC
   const [errors, setErrors] = useState({});
   const [packages, setPackages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
 
-  // Fetch packages on component mount
-  useEffect(() => {
-    const fetchPackages = async () => {
-      try {
-        console.log('Fetching packages from:', `${import.meta.env.VITE_API_URL}/package/package`);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/package/package`);
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Packages fetched successfully:', data);
-          setPackages(data);
-        } else {
-          console.error('Failed to fetch packages:', response.status);
-        }
-      } catch (error) {
-        console.error('Error fetching packages:', error);
-      }
-    };
-
-    if (isOpen) {
-      fetchPackages();
-    }
-  }, [isOpen]);
+  // packages list is also fetched by PackageSelectionModal when opened. Keep this state available
+  // in case we need it elsewhere, but we won't rely on it for selection UI.
 
   // Lock body scroll while modal is open
   useEffect(() => {
@@ -58,21 +40,29 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewC
     }
   };
 
-  // Handle package selection from dropdown
-  const handlePackageChange = (e) => {
-    const selectedPackageId = e.target.value;
-    const selectedPackage = packages.find(pkg => pkg._id === selectedPackageId);
-    
+  // Open package modal
+  const openPackageModal = () => {
+    setIsPackageModalOpen(true);
+  };
+
+  // Handle package selected from PackageSelectionModal
+  const handlePackageSelected = (pkg) => {
+    // pkg includes derived `specs` from PackageSelectionModal
     setVehicleData(prev => ({
       ...prev,
-      packageId: selectedPackageId,
-      packageName: selectedPackage ? selectedPackage.name : ''
+      packageId: pkg._id,
+      packageName: pkg.name,
+      packageSpecs: pkg.specs || null,
+      packagePrice: pkg.pricePerMonth || null,
+      carType: pkg.chosenCarType || pkg.carType || prev.carType
     }));
-    
-    // Clear error when package is selected
+
+    // Clear any package validation errors
     if (errors.package) {
       setErrors(prev => ({ ...prev, package: '' }));
     }
+
+    setIsPackageModalOpen(false);
   };
 
   // Validation function
@@ -131,7 +121,7 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewC
     setVehicleData({
       vehicleNo: '',
       carModel: '',
-      carType: 'sedan',
+      carType: '',
       packageId: '',
       packageName: '',
       scheduleType: 'schedule1'
@@ -233,22 +223,7 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewC
                       {errors.carModel && <p className="text-red-500 text-xs mt-1">{errors.carModel}</p>}
                     </div>
 
-                    {/* Car Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Car Type *
-                      </label>
-                      <select
-                        name="carType"
-                        value={vehicleData.carType}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      >
-                        <option value="sedan">Sedan</option>
-                        <option value="suv">SUV</option>
-                        <option value="premium">Premium</option>
-                      </select>
-                    </div>
+                    {/* Car Type removed here — selected via PackageSelectionModal */}
                   </div>
 
                   {/* Package Selection */}
@@ -256,23 +231,46 @@ const AddVehicleModal = ({ isOpen, onClose, customer, onVehicleAdded, onPreviewC
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Package Selection *
                     </label>
-                    <select
-                      name="packageId"
-                      value={vehicleData.packageId}
-                      onChange={handlePackageChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                        errors.package ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value="">Select a package</option>
-                      {packages.map((pkg) => (
-                        <option key={pkg._id} value={pkg._id}>
-                          {pkg.name} - ₹{pkg.pricePerMonth}/month ({pkg.carType})
-                        </option>
-                      ))}
-                    </select>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={openPackageModal}
+                        className={`w-full text-left px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${errors.package ? 'border-red-500' : 'border-gray-300'}`}
+                      >
+                        {vehicleData.packageName ? (
+                          <div>
+                            <div className="font-medium">{vehicleData.packageName}</div>
+                            {vehicleData.packageSpecs && (
+                              <div className="text-xs text-gray-600">{vehicleData.packageSpecs.exteriorPerWeek} exterior / week · {vehicleData.packageSpecs.interiorPerMonth} interior / month</div>
+                            )}
+                          </div>
+                        ) : (
+                          'Select a package'
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={openPackageModal}
+                        className="px-3 py-2 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-sm"
+                      >
+                        Choose
+                      </button>
+                    </div>
+                    {/* Show chosen car type (from package) once selected */}
+                    {vehicleData.carType && (
+                      <div className="mt-2 text-sm text-gray-600">Car Type: <span className="font-medium text-gray-800">{vehicleData.carType.charAt(0).toUpperCase() + vehicleData.carType.slice(1)}</span></div>
+                    )}
                     {errors.package && <p className="text-red-500 text-xs mt-1">{errors.package}</p>}
                   </div>
+
+                  {/* Package selection modal */}
+                  <PackageSelectionModal
+                    isOpen={isPackageModalOpen}
+                    onClose={() => setIsPackageModalOpen(false)}
+                    onPackageSelect={handlePackageSelected}
+                  />
 
                   {/* Schedule Selection */}
                   {vehicleData.packageName && (
