@@ -12,7 +12,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
       {
         vehicleNo: '',
         carModel: '',
-        carType: 'sedan',
+        carType: '',
         packageId: '',
         packageName: '',
         scheduleType: 'schedule1'
@@ -78,7 +78,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
         {
           vehicleNo: '',
           carModel: '',
-          carType: 'sedan',
+          carType: '',
           packageId: '',
           packageName: '',
           scheduleType: 'schedule1'
@@ -101,7 +101,10 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
     updatedVehicles[currentVehicleIndex] = {
       ...updatedVehicles[currentVehicleIndex],
       packageId: packageData._id,
-      packageName: packageData.name
+      packageName: packageData.name,
+      packageSpecs: packageData.specs || null,
+      packagePrice: packageData.pricePerMonth || null,
+      carType: packageData.chosenCarType || packageData.carType || updatedVehicles[currentVehicleIndex].carType
     };
     setFormData(prev => ({ ...prev, vehicles: updatedVehicles }));
     setIsPackageModalOpen(false);
@@ -188,7 +191,7 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
         {
           vehicleNo: '',
           carModel: '',
-          carType: 'sedan',
+          carType: '',
           packageId: '',
           packageName: '',
           scheduleType: 'schedule1'
@@ -415,17 +418,11 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
                           {/* Car Type */}
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Car Type *
+                              Car Type
                             </label>
-                            <select
-                              value={vehicle.carType}
-                              onChange={(e) => handleVehicleChange(index, 'carType', e.target.value)}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="sedan">Sedan</option>
-                              <option value="suv">SUV</option>
-                              <option value="premium">Premium</option>
-                            </select>
+                            <div className="px-3 py-2 border rounded-md bg-gray-50 text-sm text-gray-700">
+                              {vehicle.carType ? vehicle.carType.charAt(0).toUpperCase() + vehicle.carType.slice(1) : 'Selected via package'}
+                            </div>
                           </div>
                         </div>
 
@@ -552,7 +549,6 @@ const AddCustomerModal = ({ isOpen, onClose, onCustomerAdded }) => {
         isOpen={isPackageModalOpen}
         onClose={() => setIsPackageModalOpen(false)}
         onPackageSelect={handlePackageSelect}
-        packages={packages}
       />
     </>
   );

@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { Provider } from 'react-redux';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { store } from './store/store';
 import Login from "./Login.jsx";
 import DashBoard from "./DashBoard.jsx";
 import DashBoardWelcome from "./components/DashBoardWelcome.jsx";
@@ -12,31 +14,32 @@ import WasherAuth from "./components/WasherAuth.jsx";
 import WasherDashboard from "./components/WasherDashboard.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
 import WasherManagement from "./components/WasherManagement.jsx";
-import "./index.css"; 
+import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Routes>
-        {/* Public Route */}
-        <Route path="/" element={<Login />} />
+    <Provider store={store}>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Route */}
+          <Route path="/" element={<Login />} />
 
-        {/* Protected Routes */}
-        <Route path="/dashboard"element={<PrivateRoute> <DashBoardWelcome /> </PrivateRoute>}/>
-        <Route path="/jobs"element={ <PrivateRoute> <DashBoard /> </PrivateRoute> }/>
-        <Route path="/earning"element={ <PrivateRoute> <DashBoardEarning /> </PrivateRoute> } />
-        <Route path="/profile"element={ <PrivateRoute>  <ProfileDashBoard /> </PrivateRoute>  }/>
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={<PrivateRoute><DashBoardWelcome /></PrivateRoute>} />
+          <Route path="/jobs" element={<PrivateRoute><DashBoard /></PrivateRoute>} />
+          <Route path="/earning" element={<PrivateRoute><DashBoardEarning /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><ProfileDashBoard /></PrivateRoute>} />
 
-        {/* Admin Pages */}
-        <Route
-          path="/side" element={  <SidebarDashboard />  }  />
-        <Route path="/admin" element={ <PrivateRoute><Usermanagement /> </PrivateRoute>  } />
+          {/* Admin Pages */}
+          <Route path="/side" element={<SidebarDashboard />} />
+          <Route path="/admin" element={<PrivateRoute><Usermanagement /></PrivateRoute>} />
 
-        {/* Washer Routes */}
-        <Route path="/washer" element={<WasherAuth />} />
-        <Route path="/washerdashboard" element={<WasherDashboard />} />
-        <Route path="/washermanagement" element={<WasherManagement />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Washer Routes */}
+          <Route path="/washer" element={<WasherAuth />} />
+          <Route path="/washerdashboard" element={<WasherDashboard />} />
+          <Route path="/washermanagement" element={<WasherManagement />} />
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   </React.StrictMode>
 );

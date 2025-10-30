@@ -42,7 +42,7 @@ const AddWasherModal = ({ isOpen, onClose, onWasherAdded }) => {
     setIsLoading(true);
 
     try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/washers/addwasher`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/washer/addwasher`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
