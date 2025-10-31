@@ -238,6 +238,32 @@ const CustomerDetailsModal = ({
                 : 'N/A'
             }</p>
           </div>
+          
+          {/* Start Package Button */}
+          {!vehicle.hasStarted && !vehicle.packageStartDate && (
+            <div className="col-span-2 mt-4">
+              <button
+                onClick={async () => {
+                  try {
+                    const API = import.meta.env.VITE_API_URL || '';
+                    await axios.post(`${API}/customer/${customer._id}/vehicles/${vehicle._id}/start-package`);
+                    // Refresh data
+                    if (onCustomerUpdated) {
+                      await onCustomerUpdated();
+                    } else {
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    console.error('Failed to start package:', error);
+                    alert(error.response?.data?.message || 'Failed to start package');
+                  }
+                }}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+              >
+                Start Package
+              </button>
+            </div>
+          )}
       </div>
 
 
