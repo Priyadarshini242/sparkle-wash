@@ -89,16 +89,32 @@ const WasherDashboard = () => {
   };
 
   // Determine whether a customer/assignment has interior cleaning available
+  const parseInterior = (val) => {
+    if (val === null || typeof val === 'undefined') return null;
+    if (typeof val === 'number') return Math.max(0, Math.floor(val));
+    if (typeof val === 'boolean') return val ? 1 : 0;
+    if (typeof val === 'string') {
+      const s = val.trim().toLowerCase();
+      if (!s) return null;
+      if (s === 'no' || s === 'none' || s === 'n/a') return 0;
+      const m = s.match(/(\d+)\s*/);
+      if (m && m[1]) return Math.max(0, parseInt(m[1], 10));
+      return null;
+    }
+    return null;
+  };
+
   const hasInteriorOption = (customerObj) => {
     if (!customerObj) return false;
     // 1) If packageSpecs are present (from PackageSelectionModal) use interiorPerMonth
     if (customerObj.packageSpecs && typeof customerObj.packageSpecs.interiorPerMonth === 'number') {
       return customerObj.packageSpecs.interiorPerMonth > 0;
     }
-    // 2) Backwards-compatible fields from API: interiorCleaning or interiorCount
-    if (typeof customerObj.interiorCleaning === 'number') return customerObj.interiorCleaning > 0;
-    if (typeof customerObj.interiorCount === 'number') return customerObj.interiorCount > 0;
+
+    const parsed = parseInterior(customerObj.interiorCleaning) ?? parseInterior(customerObj.interiorCount);
+    if (typeof parsed === 'number') return parsed > 0;
     if (customerObj.interiorCleaning === true) return true;
+
     // 3) Fallback to packageName heuristics (keep previous behavior plus Basic)
     const pn = (customerObj.packageName || '').toLowerCase();
     if (!pn) return false;
@@ -209,10 +225,8 @@ const WasherDashboard = () => {
         })
       );
 
-      // Refresh server data shortly to ensure any other computed fields (counts) are up-to-date
+          // Refresh server data shortly to ensure any other computed fields (counts) are up-to-date
       setTimeout(() => refetchDashboard && refetchDashboard(), 200);
-
-      alert(`Wash completed successfully! Customer has ${result.pendingWashes} washes remaining.`);
     } catch (error) {
       console.error('Error completing wash:', error);
       alert(`Failed to complete wash: ${error.message}`);
@@ -220,6 +234,15 @@ const WasherDashboard = () => {
       setCompletingWash(null);
     }
   };
+
+  // Listen for global 'washReverted' events and refetch dashboard so buttons enable/disable reflect current state
+  useEffect(() => {
+    const handler = () => {
+      try { refetchDashboard && refetchDashboard(); } catch (e) { /* ignore */ }
+    };
+    window.addEventListener('washReverted', handler);
+    return () => window.removeEventListener('washReverted', handler);
+  }, [refetchDashboard]);
 
   // Wrapper that checks disabled state and early-completion before calling markWashCompleted
   const handleMarkComplete = async (customerObj, washType) => {

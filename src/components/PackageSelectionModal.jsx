@@ -4,7 +4,7 @@ import { useGetPackagesQuery } from '../store/apiSlice';
 const PackageSelectionModal = ({ isOpen, onClose, onPackageSelect }) => {
   const [selectedCarType, setSelectedCarType] = useState('');
   // Use RTK Query hook to fetch packages
-  const { data: packages = [], isLoading, isError } = useGetPackagesQuery(undefined, { skip: !isOpen });
+  const { data: packages = [], isLoading, isError } = useGetPackagesQuery(undefined, { skip: !isOpen, refetchOnMountOrArgChange: true });
 
   // Filter packages by car type
   const filteredPackages = selectedCarType ? packages.filter(pkg => pkg.carType === selectedCarType) : packages;

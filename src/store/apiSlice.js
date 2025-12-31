@@ -71,6 +71,15 @@ export const apiSlice = createApi({
         { type: 'Customer', id: customerId }
       ],
     }),
+
+    // Revert / cancel a completed wash
+    cancelWash: builder.mutation({
+      query: (washId) => ({
+        url: `/washlog/${washId}/cancel`,
+        method: 'POST'
+      }),
+      invalidatesTags: ['Dashboard', 'Customer']
+    }),
   }),
 });
 
@@ -80,5 +89,6 @@ export const {
   useBulkExportTemplateQuery,
   useBulkImportMutation,
   useGetWasherDashboardQuery,
-  useCompleteWashMutation
+  useCompleteWashMutation,
+  useCancelWashMutation
 } = apiSlice;

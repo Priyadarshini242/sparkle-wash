@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import AddWasherModal from "./AddWasherModal";
+import WasherDeleteModal from "./WasherDeleteModal";
 import Sidebar from "./Sidebar";
+import WasherHistoryModal from './WasherHistoryModal';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -19,6 +21,11 @@ function WasherManagement() {
   const [editingWasher, setEditingWasher] = useState(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [isAddWasherModalOpen, setIsAddWasherModalOpen] = useState(false);
+
+  // Context menu (for right-click actions)
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, washer: null });
+  const [isWasherHistoryOpen, setIsWasherHistoryOpen] = useState(false);
+  const [selectedWasherForHistory, setSelectedWasherForHistory] = useState(null);
 
   // ✅ Fetch paginated washers from backend
   const fetchWashers = async (page = 1, pageLimit = limit) => {
@@ -67,13 +74,45 @@ function WasherManagement() {
   const goToPrevPage = () => goToPage(currentPage - 1);
 
   // Delete washer
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this washer?")) return;
+  // Delete washer (open confirmation modal)
+  const [washerToDelete, setWasherToDelete] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [messageModal, setMessageModal] = useState({ open: false, text: '', type: 'success' });
+
+  const handleDeleteClick = (washer) => {
+    setWasherToDelete(washer);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Context menu actions
+  const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0, washer: null });
+  const handleViewHistory = () => {
+    if (!contextMenu.washer) return closeContextMenu();
+    setSelectedWasherForHistory(contextMenu.washer);
+    setIsWasherHistoryOpen(true);
+    closeContextMenu();
+  };
+
+  useEffect(() => {
+    const onClick = () => closeContextMenu();
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, []);
+
+  const performDelete = async (id) => {
+    setIsDeleting(true);
     try {
-      await axios.delete(`${API_BASE_URL}/${id}`);
+      await axios.delete(`${API_BASE_URL}/washer/${id}`);
+      setIsDeleteModalOpen(false);
+      setMessageModal({ open: true, text: 'Washer deleted successfully.', type: 'success' });
       fetchWashers(currentPage, limit);
-    } catch {
-      alert("Delete failed");
+    } catch (err) {
+      console.error('Delete error:', err);
+      setMessageModal({ open: true, text: 'Failed to delete washer. Try again.', type: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setWasherToDelete(null);
     }
   };
 
@@ -85,10 +124,11 @@ function WasherManagement() {
     setSavingEdit(true);
     try {
       const id = editingWasher._id || editingWasher.id;
-      await axios.put(`${API_BASE_URL}/${id}`, editingWasher);
+      await axios.put(`${API_BASE_URL}/washer/${id}`, editingWasher);
       setEditingWasher(null);
       fetchWashers(currentPage, limit);
-    } catch {
+    } catch (err) {
+      console.error('Update error:', err);
       alert("Update failed");
     } finally {
       setSavingEdit(false);
@@ -127,53 +167,69 @@ function WasherManagement() {
           </button>
         </div>
 
-        {/* Washer Table */}
-        <div className="overflow-x-auto bg-white rounded shadow">
-          <table className="min-w-full border-gray-300">
-            <thead>
-              <tr className="bg-gray-200">
-                <th className="border px-4 py-2">Name</th>
-                <th className="border px-4 py-2">Mobile</th>
-                <th className="border px-4 py-2">Email</th>
-                <th className="border px-4 py-2">Status</th>
-                <th className="border px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {washers.map((washer) => (
-                <tr key={washer._id} className="text-center">
-                  <td className="border px-4 py-2">{washer.name}</td>
-                  <td className="border px-4 py-2">{washer.mobileNo}</td>
-                  <td className="border px-4 py-2">{washer.email}</td>
-                  <td className="border px-4 py-2">
-                    <span
-                      className={`px-2 py-1 rounded text-white ${
-                        washer.status?.toLowerCase() === "active"
-                          ? "bg-green-500"
-                          : "bg-red-500"
-                      }`}
-                    >
-                      {washer.status}
-                    </span>
-                  </td>
-                  <td className="border px-4 py-2">
-                    <button
-                      onClick={() => openEdit(washer)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded mr-2"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(washer._id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  </td>
+        {/* Washer Table - styled like customer dashboard, scrollable */}
+        <div className="shadow-sm border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <div className="overflow-y-auto max-h-[60vh]">
+            <table className="w-full border-collapse bg-white">
+              <thead>
+                <tr>
+                  <th className="sticky top-0 z-10 border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100">Name</th>
+                  <th className="sticky top-0 z-10 border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100">Mobile</th>
+                  <th className="sticky top-0 z-10 border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100">Email</th>
+                  <th className="sticky top-0 z-10 border-b border-gray-200 px-4 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100">Status</th>
+                  <th className="sticky top-0 z-10 border-b border-gray-200 px-4 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {washers.map((washer) => (
+                  <tr key={washer._id} className="hover:bg-gray-50 transition-all duration-200 cursor-pointer group" onContextMenu={(e) => {
+                    e.preventDefault();
+                    // show custom context menu
+                    setContextMenu({ visible: true, x: e.clientX, y: e.clientY, washer });
+                  }}>
+                    <td className="px-4 py-4 border-b border-gray-100">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-md bg-gradient-to-r from-green-500 to-blue-600">
+                          {washer.name?.charAt(0)?.toUpperCase() || 'W'}
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900" title={washer.name}>{washer.name || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">Washer</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-4 border-b border-gray-100">
+                      <div className="text-sm text-gray-900 font-mono">{washer.mobileNo || 'N/A'}</div>
+                    </td>
+
+                    <td className="px-4 py-4 border-b border-gray-100">
+                      <div className="text-sm text-gray-900 truncate max-w-xs" title={washer.email}>{washer.email || 'N/A'}</div>
+                    </td>
+
+                    <td className="px-4 py-4 border-b border-gray-100">
+                      <span className={`px-2 py-1 rounded text-white ${washer.status?.toLowerCase() === 'active' ? 'bg-green-500' : 'bg-red-500'}`}>{washer.status || 'N/A'}</span>
+                    </td>
+
+                    <td className="px-4 py-4 border-b border-gray-100 text-center">
+                      <button
+                        onClick={() => openEdit(washer)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 shadow-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 mr-2 group-hover:shadow-md transform group-hover:scale-105"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(washer)}
+                        className="inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 shadow-sm bg-red-500 text-white hover:bg-red-600"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* ✅ Pagination Section */}
@@ -238,6 +294,116 @@ function WasherManagement() {
         onClose={() => setIsAddWasherModalOpen(false)}
         onWasherAdded={handleWasherAdded}
       />
+
+      {/* Washer History Modal */}
+      <WasherHistoryModal
+        isOpen={isWasherHistoryOpen}
+        onClose={() => { setIsWasherHistoryOpen(false); setSelectedWasherForHistory(null); }}
+        washer={selectedWasherForHistory}
+      />
+
+      {/* Context menu for right-click */}
+      {contextMenu.visible && (
+        <div className="fixed z-50 bg-white border rounded shadow-md py-1" style={{ left: contextMenu.x, top: contextMenu.y }}>
+          <button onClick={handleViewHistory} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left">View History</button>
+          <hr className="border-t my-1" />
+          <button onClick={() => { handleDeleteClick(contextMenu.washer); closeContextMenu(); }} className="block px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left">Delete</button>
+        </div>
+      )}
+
+      {/* Edit Washer Modal */}
+      {editingWasher && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full mx-4">
+            <div className="flex flex-col">
+              <div className="px-6 py-4 bg-gradient-to-r from-green-600 to-blue-600 text-white flex justify-between items-center">
+                <h2 className="text-2xl font-bold">Edit Washer</h2>
+                <button onClick={() => setEditingWasher(null)} className="text-white text-2xl">×</button>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  saveEdit();
+                }}
+                className="p-6 space-y-6"
+              >
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                  <input
+                    name="name"
+                    value={editingWasher.name || ''}
+                    onChange={(e) => setEditingWasher((prev) => ({ ...prev, name: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
+                  <input
+                    name="mobileNo"
+                    value={editingWasher.mobileNo || ''}
+                    onChange={(e) => setEditingWasher((prev) => ({ ...prev, mobileNo: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    name="email"
+                    value={editingWasher.email || ''}
+                    onChange={(e) => setEditingWasher((prev) => ({ ...prev, email: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => setEditingWasher(null)}
+                    disabled={savingEdit}
+                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-md hover:scale-105 transform transition"
+                  >
+                    {savingEdit ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      <WasherDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => { if (!isDeleting) setIsDeleteModalOpen(false); }}
+        onConfirm={performDelete}
+        washer={washerToDelete}
+        isLoading={isDeleting}
+      />
+
+      {/* Simple message modal for success/error */}
+      {messageModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center p-4">
+          <div className={`max-w-md w-full rounded-lg p-6 ${messageModal.type === 'success' ? 'bg-white' : 'bg-white'} shadow-lg`}>
+            <div className="flex flex-col items-center gap-4">
+              <div className="text-lg font-semibold">{messageModal.type === 'success' ? 'Success' : 'Error'}</div>
+              <div className="text-sm text-gray-700 text-center">{messageModal.text}</div>
+              <div className="w-full flex justify-center">
+                <button onClick={() => setMessageModal({ open: false, text: '', type: 'success' })} className="px-4 py-2 bg-blue-600 text-white rounded">OK</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

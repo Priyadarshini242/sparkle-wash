@@ -95,6 +95,31 @@ const CustomerDetailsModal = ({
     })();
   }, [customer]);
 
+  // Poll for updates while the modal is open and Vehicles tab is active.
+  // This ensures a recently completed wash (from the washer UI) appears
+  // in the modal without needing to close/re-open it.
+  useEffect(() => {
+    if (!isOpen || !customer) return;
+    if (activeTab !== 'vehicles') return;
+
+    let mounted = true;
+    const API = import.meta.env.VITE_API_URL || '';
+
+    const poll = async () => {
+      try {
+        const res = await axios.get(`${API}/customer/${customer._id}`);
+        if (mounted) setFreshCustomer(res.data);
+      } catch (err) {
+        // ignore polling errors
+      }
+    };
+
+    // Initial immediate fetch then interval
+    poll();
+    const id = setInterval(poll, 5000);
+    return () => { mounted = false; clearInterval(id); };
+  }, [isOpen, customer, activeTab]);
+
   // Lock body scroll while modal is open
   useEffect(() => {
     if (isOpen) {
@@ -114,7 +139,31 @@ const CustomerDetailsModal = ({
   // Ensure we still short-circuit rendering when modal is closed or customer missing
   if (!isOpen || !customer) return null;
 
-  const hasMultipleVehicles = customer.hasMultipleVehicles || (customer.totalVehicles && customer.totalVehicles > 1);
+  // Prefer the freshly fetched customer metadata (which includes runtime fields
+  // like `recentWash`) but preserve the original `customer` prop's vehicle-level
+  // counts and `totalVehicles`. We merge `recentWash` from `freshCustomer`
+  // into the original vehicles array so UI counts don't disappear.
+  let displayCustomer;
+  if (!freshCustomer) {
+    displayCustomer = customer;
+  } else {
+    // Start with a shallow merge but preserve original vehicle objects when present
+    displayCustomer = { ...freshCustomer, ...customer };
+    const originalVehicles = Array.isArray(customer.vehicles) && customer.vehicles.length > 0
+      ? customer.vehicles
+      : (Array.isArray(freshCustomer.vehicles) ? freshCustomer.vehicles : []);
+
+    // Merge recentWash from freshCustomer into originalVehicles by _id
+    displayCustomer.vehicles = originalVehicles.map((ov) => {
+      const fv = (freshCustomer.vehicles || []).find(x => String(x._id) === String(ov._id));
+      if (!fv) return ov;
+      return { ...ov, recentWash: fv.recentWash || ov.recentWash };
+    });
+
+    // Ensure totalVehicles remains accurate (prefer original value if available)
+    displayCustomer.totalVehicles = customer.totalVehicles || (displayCustomer.vehicles ? displayCustomer.vehicles.length : 1);
+  }
+  const hasMultipleVehicles = (displayCustomer && (displayCustomer.hasMultipleVehicles || (displayCustomer.totalVehicles && displayCustomer.totalVehicles > 1))) || false;
 
   const handleAllocateWasher = (customer, vehicle) => {
     setSelectedVehicleForWasher(vehicle);
@@ -159,8 +208,11 @@ const CustomerDetailsModal = ({
     return washingDays.map(d => names[d] || d).join(', ');
   };
 
-  // Vehicle Card Component
-  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher, isPreview }) => (
+  // Vehicle Card Component (supports recent wash cancel button)
+  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher, isPreview }) => {
+  
+
+    return (
     <div className={`border rounded-lg p-4 ${isMultiVehicle ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center space-x-2">
@@ -246,12 +298,42 @@ const CustomerDetailsModal = ({
                 onClick={async () => {
                   try {
                     const API = import.meta.env.VITE_API_URL || '';
-                    await axios.post(`${API}/customer/${customer._id}/vehicles/${vehicle._id}/start-package`);
-                    // Refresh data
+                    const res = await axios.post(`${API}/customer/${customer._id}/vehicles/${vehicle._id}/start-package`);
+                    // If parent provided a refresh callback, use it so the rest of app stays in sync
                     if (onCustomerUpdated) {
                       await onCustomerUpdated();
-                    } else {
-                      window.location.reload();
+                      return;
+                    }
+
+                    // Optimistic local update: apply returned vehicle start/end info into freshCustomer
+                    const returnedVehicle = res.data && res.data.vehicle ? res.data.vehicle : null;
+                    const startDate = res.data && res.data.startDate ? res.data.startDate : null;
+                    const endDate = res.data && res.data.endDate ? res.data.endDate : null;
+
+                    // Build updated customer object based on whichever source we have
+                    const base = freshCustomer ? { ...freshCustomer } : { ...customer };
+                    base.vehicles = Array.isArray(base.vehicles) ? base.vehicles.map(v => {
+                      if (String(v._id) === String(vehicle._id)) {
+                        return {
+                          ...v,
+                          hasStarted: true,
+                          packageStartDate: startDate || (returnedVehicle && returnedVehicle.packageStartDate) || v.packageStartDate,
+                          packageEndDate: endDate || (returnedVehicle && returnedVehicle.packageEndDate) || v.packageEndDate,
+                          // Merge packageHistory if provided
+                          packageHistory: (returnedVehicle && returnedVehicle.packageHistory) ? (returnedVehicle.packageHistory) : v.packageHistory
+                        };
+                      }
+                      return v;
+                    }) : [];
+
+                    // Ensure totalVehicles stays accurate
+                    base.totalVehicles = base.totalVehicles || (base.vehicles ? base.vehicles.length : 1);
+
+                    setFreshCustomer(base);
+
+                    // Update per-vehicle package history cache if server returned history
+                    if (returnedVehicle && returnedVehicle.packageHistory) {
+                      setPackageHistoryByVehicle(prev => ({ ...(prev || {}), [String(vehicle._id)]: { loading: false, packageHistory: returnedVehicle.packageHistory || [], loaded: true, visible: false } }));
                     }
                   } catch (error) {
                     console.error('Failed to start package:', error);
@@ -305,6 +387,8 @@ const CustomerDetailsModal = ({
           </div>
         </div>
       </div>
+
+
 
       {/* Washer Assignment Section */}
       <div className="mt-4 pt-4 border-t border-gray-200">
@@ -363,6 +447,10 @@ const CustomerDetailsModal = ({
     </div>
   );
 
+  };
+
+  // end VehicleCard
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
   <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-auto">
@@ -410,7 +498,7 @@ const CustomerDetailsModal = ({
                   : 'text-white hover:bg-white hover:bg-opacity-20'
               }`}
             >
-              Vehicles ({customer.totalVehicles || 1})
+              Vehicles ({(displayCustomer && (displayCustomer.totalVehicles || 1)) || 1})
             </button>
           </div>
         </div>
@@ -499,8 +587,8 @@ const CustomerDetailsModal = ({
                   </div>
                 )}
 
-                {customer.vehicles && customer.vehicles.length > 0 ? (
-                  customer.vehicles.map((vehicle, index) => (
+                {(displayCustomer?.vehicles && displayCustomer.vehicles.length > 0) ? (
+                  displayCustomer.vehicles.map((vehicle, index) => (
                     <VehicleCard 
                       key={vehicle._id || index} 
                       vehicle={vehicle} 
@@ -509,17 +597,17 @@ const CustomerDetailsModal = ({
                       onAllocateWasher={handleAllocateWasher}
                     />
                   ))
-                ) : customer.carModel ? (
+                ) : (displayCustomer?.carModel || customer.carModel) ? (
                   // Display single vehicle for backward compatibility
                   <VehicleCard 
                     vehicle={{
-                      carModel: customer.carModel,
-                      vehicleNo: customer.vehicleNo,
-                      carType: customer.carType,
-                      packageName: customer.packageName,
-                      washerId: customer.washerId,
-                      packageStartDate: customer.packageStartDate,
-                      packageEndDate: customer.packageEndDate
+                      carModel: (displayCustomer && displayCustomer.carModel) || customer.carModel,
+                      vehicleNo: (displayCustomer && displayCustomer.vehicleNo) || customer.vehicleNo,
+                      carType: (displayCustomer && displayCustomer.carType) || customer.carType,
+                      packageName: (displayCustomer && displayCustomer.packageName) || customer.packageName,
+                      washerId: (displayCustomer && displayCustomer.washerId) || customer.washerId,
+                      packageStartDate: (displayCustomer && displayCustomer.packageStartDate) || customer.packageStartDate,
+                      packageEndDate: (displayCustomer && displayCustomer.packageEndDate) || customer.packageEndDate
                     }} 
                     index={0} 
                     isMultiVehicle={false}

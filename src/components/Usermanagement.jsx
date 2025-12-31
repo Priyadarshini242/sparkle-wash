@@ -9,6 +9,7 @@ import BulkOperationsModal from "./BulkOperationsModal";
 import ContextMenu from "./ContextMenu";
 import CustomerHistoryModal from "./CustomerHistoryModal";
 import CustomerDetailsModal from "./CustomerDetailsModal";
+import ManageWashesModal from "./ManageWashesModal";
 import AddVehicleModal from "./AddVehicleModal";
 import EditVehicleModal from "./EditVehicleModal";
 import DeleteConfirmationModal from "./DeleteConfirmationModal";
@@ -54,6 +55,10 @@ function Usermanagement() {
   // Customer details modal state
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [customerForDetails, setCustomerForDetails] = useState(null);
+
+  // Manage washes modal state
+  const [isManageModalOpen, setIsManageModalOpen] = useState(false);
+  const [customerForManage, setCustomerForManage] = useState(null);
 
   // Vehicle management modal states
   const [isAddVehicleModalOpen, setIsAddVehicleModalOpen] = useState(false);
@@ -122,6 +127,17 @@ function Usermanagement() {
       const data = await response.json();
       console.log('Fetched customers:', data); // Debug log
       setCustomers(data);
+      // If the details modal is open, refresh the selected customer's details
+      if (isDetailsModalOpen && customerForDetails && customerForDetails._id) {
+        const updated = data.find(c => String(c._id) === String(customerForDetails._id));
+        if (updated) {
+          setCustomerForDetails(updated);
+        } else {
+          // If customer no longer exists in list, close the modal
+          setCustomerForDetails(null);
+          setIsDetailsModalOpen(false);
+        }
+      }
       setError(null);
     } catch (err) {
       console.error('Error fetching customers:', err);
@@ -614,6 +630,7 @@ function Usermanagement() {
             goToPrevPage={goToPrevPage}
             onContextMenu={handleContextMenu}
             onViewDetails={handleViewDetails}
+            onManageClick={(customer) => { setCustomerForManage(customer); setIsManageModalOpen(true); }}
           />
         )}
       </div>
@@ -644,6 +661,7 @@ function Usermanagement() {
           setSelectedCustomer(null);
         }}
         customer={selectedCustomer}
+        onReverted={fetchCustomers}
       />
 
       {/* Edit Customer Modal */}
@@ -726,6 +744,14 @@ function Usermanagement() {
       <BulkOperationsModal
         isOpen={isBulkModalOpen}
         onClose={() => setIsBulkModalOpen(false)}
+      />
+
+      {/* Manage Washes Modal */}
+      <ManageWashesModal
+        isOpen={isManageModalOpen}
+        onClose={() => { setIsManageModalOpen(false); setCustomerForManage(null); }}
+        customer={customerForManage}
+        onUpdated={() => { fetchCustomers(); }}
       />
           </div>
         </div>
@@ -827,7 +853,8 @@ const CustomerTable = ({
   goToNextPage,
   goToPrevPage,
   onContextMenu,
-  onViewDetails
+  onViewDetails,
+  onManageClick
 }) => {
   if (!customers || customers.length === 0) {
     return (
@@ -942,7 +969,16 @@ const CustomerTable = ({
                     </div>
                   </td>
                   
-                  <td className="px-4 py-4 border-b border-gray-100 text-center">
+                  <td className="px-4 py-4 border-b border-gray-100 text-center space-x-2">
+                    <button
+                      onClick={() => {
+                        try { console.debug('Manage Washes click (prop):', customer && customer._id); } catch (e) {}
+                        if (typeof onManageClick === 'function') onManageClick(customer);
+                      }}
+                      className={`inline-flex items-center px-3 py-2 text-xs font-medium rounded-lg transition-all duration-200 mr-2 bg-yellow-500 text-white hover:bg-yellow-600`}
+                    >
+                      Manage Washes
+                    </button>
                     <button
                       onClick={() => onViewDetails && onViewDetails(customer)}
                       className={`
@@ -1025,5 +1061,6 @@ const CustomerTable = ({
     </div>
   );
 };
+
 
 export default Usermanagement;
