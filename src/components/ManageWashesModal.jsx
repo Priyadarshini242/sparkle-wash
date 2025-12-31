@@ -30,15 +30,20 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
 
   if (!isOpen || !customer) return null;
 
-  const handleComplete = async (vehicleId, scheduledDate) => {
+  const handleComplete = async (vehicleId, scheduledDate, requestedWashType = 'exterior') => {
     const key = `${vehicleId || 'legacy'}_${scheduledDate}`;
     setProcessing(prev => ({ ...prev, [key]: true }));
     try {
       const API = import.meta.env.VITE_API_URL || '';
-      const res = await axios.post(`${API}/customer/${customer._id}/complete-pending`, { vehicleId, scheduledDate });
+      const res = await axios.post(`${API}/customer/${customer._id}/complete-pending`, { vehicleId, scheduledDate, washType: requestedWashType });
       // refresh
       await fetchPending();
       if (typeof onUpdated === 'function') onUpdated(res.data);
+
+      // Notify other parts of the app (details modal, dashboards) so they can refresh immediately
+      try {
+        window.dispatchEvent(new CustomEvent('washCompleted', { detail: { customerId: customer._id, vehicleId: vehicleId || null, scheduledDate, updatedCounts: res.data && res.data.updatedCounts, washLog: res.data && res.data.washLog } }));
+      } catch (e) { /* ignore */ }
     } catch (err) {
       console.error('Failed to complete pending wash:', err);
       alert((err && err.response && err.response.data && err.response.data.message) || 'Failed to complete wash');
@@ -64,6 +69,12 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
   };
 
   const vehicleHasInterior = (vehicleId) => {
+    // Prefer server-provided flag from fetched pending-washes data
+    if (data && Array.isArray(data.vehicles)) {
+      const found = data.vehicles.find(v => String(v.vehicleId) === String(vehicleId));
+      if (found && typeof found.hasInterior !== 'undefined') return !!found.hasInterior;
+    }
+
     if (!customer) return false;
     const vehicle = (customer.vehicles || []).find(v => String(v._id) === String(vehicleId));
     const check = (obj) => {
@@ -81,11 +92,14 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
   };
 
   const handleCompleteWithInterior = async (vehicleId, scheduledDate) => {
-    // Only show this action when interior is available; but still confirm if user forces it
-    if (!vehicleHasInterior(vehicleId)) {
+    // Prefer server-provided hasInterior flag on the fetched data
+    const vObj = (data.vehicles || []).find(x => String(x.vehicleId) === String(vehicleId));
+    if (vObj && vObj.hasInterior === false) {
+      if (!confirm('This vehicle/package does not include interior cleaning. Proceed with exterior-only completion?')) return;
+    } else if (!vObj && !vehicleHasInterior(vehicleId)) {
       if (!confirm('This vehicle/package does not include interior cleaning. Proceed with exterior-only completion?')) return;
     }
-    await handleComplete(vehicleId, scheduledDate);
+    await handleComplete(vehicleId, scheduledDate, 'both');
   };
 
   return (
@@ -147,7 +161,24 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
                                     {(() => {
                                       const key = `${v.vehicleId || 'legacy'}_${p.scheduledDate}`;
                                       const itemProcessing = !!processing[key];
-                                      const showInterior = (p.washType === 'both') || vehicleHasInterior(v.vehicleId);
+
+                                      // Determine whether to show interior completion option.
+                                      // Business rules:
+                                      // - Packages with name including 'Moderate' should NEVER show interior option.
+                                      // - Packages named 'Classic', 'Premium', or 'Basic' SHOULD show interior option.
+                                      // - If packageName isn't decisive, prefer server-provided v.hasInterior when true; otherwise fall back to local heuristics.
+                                      let showInterior = false;
+                                      const pkgName = v.packageName ? String(v.packageName).toLowerCase() : '';
+                                      if (pkgName.includes('moderate')) {
+                                        showInterior = false;
+                                      } else if (pkgName && /(classic|premium|basic|hatch|hatch pack)/i.test(pkgName)) {
+                                        showInterior = true;
+                                      } else if (typeof v.hasInterior !== 'undefined' && v.hasInterior === true) {
+                                        showInterior = true;
+                                      } else {
+                                        showInterior = (p.washType === 'both' || vehicleHasInterior(v.vehicleId));
+                                      }
+
                                       return (
                                         <div className="flex items-center gap-2">
                                           <button

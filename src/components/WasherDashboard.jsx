@@ -227,6 +227,11 @@ const WasherDashboard = () => {
 
           // Refresh server data shortly to ensure any other computed fields (counts) are up-to-date
       setTimeout(() => refetchDashboard && refetchDashboard(), 200);
+
+      // Dispatch global event so other UI (customer details, admin panels) can refresh immediately
+      try {
+        window.dispatchEvent(new CustomEvent('washCompleted', { detail: { customerId, vehicleId, updatedCounts: { pending: result.pendingWashes, completed: result.completedWashes, total: result.totalMonthlyWashes }, washLog: { washId: result.washId || null, lastWash: result.lastWash || null } } }));
+      } catch (e) { /* ignore */ }
     } catch (error) {
       console.error('Error completing wash:', error);
       alert(`Failed to complete wash: ${error.message}`);
