@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PackageSelectionModal from './PackageSelectionModal';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated }) => {
   const [vehicleData, setVehicleData] = useState({
@@ -8,7 +10,9 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
     carType: 'sedan',
     packageId: '',
     packageName: '',
-    scheduleType: 'schedule1'
+    scheduleType: 'schedule1',
+    packageStartDate: '',
+    packageEndDate: ''
   });
   
   const [errors, setErrors] = useState({});
@@ -25,7 +29,9 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
         carType: vehicle.carType || 'sedan',
         packageId: vehicle.packageId?._id || vehicle.packageId || '',
         packageName: vehicle.packageName || vehicle.packageId?.name || '',
-        scheduleType: vehicle.washingSchedule?.scheduleType || 'schedule1'
+        scheduleType: vehicle.washingSchedule?.scheduleType || 'schedule1',
+        packageStartDate: vehicle.packageStartDate ? new Date(vehicle.packageStartDate) : (vehicle.subscriptionStart ? new Date(vehicle.subscriptionStart) : null),
+        packageEndDate: vehicle.packageEndDate ? new Date(vehicle.packageEndDate) : (vehicle.subscriptionEnd ? new Date(vehicle.subscriptionEnd) : null)
       });
     }
   }, [vehicle]);
@@ -84,6 +90,17 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
       newErrors.package = 'Package selection is required';
     }
 
+    // Validate package dates if provided
+    if (vehicleData.packageStartDate && vehicleData.packageEndDate) {
+      const s = vehicleData.packageStartDate instanceof Date ? vehicleData.packageStartDate : new Date(vehicleData.packageStartDate);
+      const e = vehicleData.packageEndDate instanceof Date ? vehicleData.packageEndDate : new Date(vehicleData.packageEndDate);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) {
+        newErrors.packageDates = 'Invalid date(s)';
+      } else if (s > e) {
+        newErrors.packageDates = 'Start date must be on or before end date';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -97,12 +114,17 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
     setIsLoading(true);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/${customer._id}/vehicles/${vehicle._id}`, {
+      // Prepare payload, convert Date objects to ISO strings for backend
+      const payload = { ...vehicleData };
+      if (vehicleData.packageStartDate instanceof Date) payload.packageStartDate = vehicleData.packageStartDate.toISOString();
+      if (vehicleData.packageEndDate instanceof Date) payload.packageEndDate = vehicleData.packageEndDate.toISOString();
+
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/customer/${customer._id}/vehicles/${vehicle._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(vehicleData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -256,6 +278,39 @@ const EditVehicleModal = ({ isOpen, onClose, customer, vehicle, onVehicleUpdated
                     </button>
                     {errors.package && <p className="text-red-500 text-xs mt-1">{errors.package}</p>}
                   </div>
+
+                  {/* Package Start/End Dates (optional edit) */}
+                  {vehicleData.packageName && (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Package Start Date</label>
+                        <DatePicker
+                          selected={vehicleData.packageStartDate}
+                          onChange={(date) => setVehicleData(prev => ({ ...prev, packageStartDate: date }))}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="Select start date"
+                          isClearable
+                          todayButton="Today"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                          popperPlacement="bottom-start"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Package End Date</label>
+                        <DatePicker
+                          selected={vehicleData.packageEndDate}
+                          onChange={(date) => setVehicleData(prev => ({ ...prev, packageEndDate: date }))}
+                          dateFormat="yyyy-MM-dd"
+                          placeholderText="Select end date"
+                          isClearable
+                          todayButton="Today"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border-gray-300"
+                          popperPlacement="bottom-start"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {errors.packageDates && <p className="text-red-500 text-xs mt-2">{errors.packageDates}</p>}
 
                   {/* Schedule Selection */}
                   {vehicleData.packageName && (

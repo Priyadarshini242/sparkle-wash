@@ -6,6 +6,7 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({ vehicles: [], month: '' });
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0,7));
+  const [showPackageWindow, setShowPackageWindow] = useState(true);
   const [processing, setProcessing] = useState({});
 
   const fetchPending = async () => {
@@ -13,7 +14,23 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
     setLoading(true);
     try {
       const API = import.meta.env.VITE_API_URL || '';
-      const res = await axios.get(`${API}/customer/${customer._id}/pending-washes?month=${selectedMonth}`);
+      // Ensure month param is YYYY-MM when requesting month view (some browsers may display a localized label)
+      let q;
+      if (showPackageWindow) {
+        q = '?month=all';
+      } else {
+        let monthParam = selectedMonth;
+        // If selectedMonth is a display string like 'January, 2026', convert it to YYYY-MM
+        if (typeof monthParam === 'string' && !/^(\d{4}-\d{2})$/.test(monthParam)) {
+          const parsed = new Date(monthParam);
+          if (!isNaN(parsed.getTime())) {
+            monthParam = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}`;
+          }
+        }
+        q = `?month=${encodeURIComponent(monthParam)}`;
+      }
+
+      const res = await axios.get(`${API}/customer/${customer._id}/pending-washes${q}`);
       setData(res.data || { vehicles: [], month: '' });
     } catch (err) {
       console.error('Failed to fetch pending washes:', err, err.response && err.response.data);
@@ -24,9 +41,9 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
   };
 
   useEffect(() => {
-    console.debug('ManageWashesModal - isOpen:', isOpen, 'customer:', customer && customer._id, 'month:', selectedMonth);
+    console.debug('ManageWashesModal - isOpen:', isOpen, 'customer:', customer && customer._id, 'month:', selectedMonth, 'showPackageWindow:', showPackageWindow);
     if (isOpen && customer) fetchPending();
-  }, [isOpen, customer, selectedMonth]);
+  }, [isOpen, customer, selectedMonth, showPackageWindow]);
 
   if (!isOpen || !customer) return null;
 
@@ -114,9 +131,15 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
         </div>
 
         <div className="p-4 border-b flex items-center gap-4">
-          <label className="text-sm text-gray-700">Select Month:</label>
-          <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="border rounded px-3 py-2" />
-          <div className="text-sm text-gray-500">Pending washes (including missed dates) are shown below. Note: list is capped to package pending count for the month.</div>
+          <label className="text-sm text-gray-700">Show full package duration:</label>
+          <input type="checkbox" checked={showPackageWindow} onChange={(e) => setShowPackageWindow(e.target.checked)} className="h-4 w-4" />
+          {!showPackageWindow && (
+            <>
+              <label className="text-sm text-gray-700">Select Month:</label>
+              <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="border rounded px-3 py-2" />
+            </>
+          )}
+          <div className="text-sm text-gray-500">{showPackageWindow ? 'Showing scheduled washes across the package start/end window.' : 'Pending washes (including missed dates) are shown below. Note: list is capped to package pending count for the month.'}</div>
         </div>
 
         <div className="p-4">
@@ -139,23 +162,22 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
                       <div key={v.vehicleId || 'legacy'} className="border rounded p-3 bg-gray-50">
                         <div className="flex justify-between items-center mb-2">
                           <div className="font-medium">{v.vehicleNo || 'No Vehicle'}</div>
-                          <div className="text-sm text-gray-500">{v.pendingWashes.length} pending</div>
-                          {v.totalScheduled && v.totalScheduled > v.pendingWashes.length && (
+                          {/* Show either package remaining or pending count */}
+                          <div className="text-sm text-gray-500">{typeof v.packageDays !== 'undefined' ? `${v.remaining} remaining` : `${v.pendingWashes.length} pending`}</div>
+                          {v.totalScheduled && (typeof v.packageDays === 'undefined') && v.totalScheduled > v.pendingWashes.length && (
                             <div className="text-xs text-gray-500">Showing {v.pendingWashes.length} of {v.totalScheduled} scheduled</div>
                           )}
                         </div>
 
-                        {v.pendingWashes.length === 0 ? (
-                          <div className="text-sm text-gray-500">No pending washes for this vehicle.</div>
-                        ) : (
+                        {typeof v.packageDays !== 'undefined' ? (
                           <ul className="space-y-2">
-                            {v.pendingWashes.map(p => {
+                            {v.packageDays.map(p => {
                               const key = `${v.vehicleId || 'legacy'}_${p.scheduledDate}`;
                               return (
                                 <li key={key} className="flex items-center justify-between p-2 bg-white border rounded">
                                   <div>
                                     <div className="text-sm font-medium">{new Date(p.scheduledDate).toLocaleDateString()}</div>
-                                    <div className="text-xs text-gray-500">{p.day} • {p.missed ? 'Missed' : 'Scheduled'} • {p.washType === 'both' ? 'Interior & Exterior' : 'Exterior'}</div>
+                                    <div className="text-xs text-gray-500">{p.day} • {p.completed ? 'Completed' : (p.missed ? 'Missed' : 'Available')} • {p.washType === 'both' ? 'Interior & Exterior' : 'Exterior'}</div>
                                   </div>
                                   <div>
                                     {(() => {
@@ -163,10 +185,6 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
                                       const itemProcessing = !!processing[key];
 
                                       // Determine whether to show interior completion option.
-                                      // Business rules:
-                                      // - Packages with name including 'Moderate' should NEVER show interior option.
-                                      // - Packages named 'Classic', 'Premium', or 'Basic' SHOULD show interior option.
-                                      // - If packageName isn't decisive, prefer server-provided v.hasInterior when true; otherwise fall back to local heuristics.
                                       let showInterior = false;
                                       const pkgName = v.packageName ? String(v.packageName).toLowerCase() : '';
                                       if (pkgName.includes('moderate')) {
@@ -179,23 +197,28 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
                                         showInterior = (p.washType === 'both' || vehicleHasInterior(v.vehicleId));
                                       }
 
+                                      const disabledForPackageLimit = (typeof v.packageTotal === 'number' && typeof v.completedCount === 'number' && v.completedCount >= v.packageTotal);
+                                      const alreadyCompleted = !!p.completed;
+
+                                      const disabled = itemProcessing || disabledForPackageLimit || alreadyCompleted;
+
                                       return (
                                         <div className="flex items-center gap-2">
                                           <button
                                             onClick={() => handleComplete(v.vehicleId, p.scheduledDate)}
-                                            disabled={itemProcessing}
-                                            className={`px-3 py-2 text-sm rounded ${itemProcessing ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                            disabled={disabled}
+                                            className={`px-3 py-2 text-sm rounded ${disabled ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
                                           >
-                                            {itemProcessing ? 'Processing...' : 'Complete'}
+                                            {itemProcessing ? 'Processing...' : (alreadyCompleted ? 'Completed' : 'Complete')}
                                           </button>
 
                                           {showInterior && (
                                             <button
                                               onClick={() => handleCompleteWithInterior(v.vehicleId, p.scheduledDate)}
-                                              disabled={itemProcessing}
-                                              className={`px-3 py-2 text-sm rounded ${itemProcessing ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                              disabled={disabled}
+                                              className={`px-3 py-2 text-sm rounded ${disabled ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
                                             >
-                                              {itemProcessing ? 'Processing...' : 'Complete With Interior'}
+                                              {itemProcessing ? 'Processing...' : (alreadyCompleted ? 'Completed' : 'Complete With Interior')}
                                             </button>
                                           )}
                                         </div>
@@ -206,6 +229,69 @@ const ManageWashesModal = ({ isOpen, onClose, customer, onUpdated }) => {
                               );
                             })}
                           </ul>
+                        ) : (
+                          v.pendingWashes.length === 0 ? (
+                            <div className="text-sm text-gray-500">No pending washes for this vehicle.</div>
+                          ) : (
+                            <ul className="space-y-2">
+                              {v.pendingWashes.map(p => {
+                                const key = `${v.vehicleId || 'legacy'}_${p.scheduledDate}`;
+                                return (
+                                  <li key={key} className="flex items-center justify-between p-2 bg-white border rounded">
+                                    <div>
+                                      <div className="text-sm font-medium">{new Date(p.scheduledDate).toLocaleDateString()}</div>
+                                      <div className="text-xs text-gray-500">{p.day} • {p.missed ? 'Missed' : 'Scheduled'} • {p.washType === 'both' ? 'Interior & Exterior' : 'Exterior'}</div>
+                                    </div>
+                                    <div>
+                                      {(() => {
+                                        const key = `${v.vehicleId || 'legacy'}_${p.scheduledDate}`;
+                                        const itemProcessing = !!processing[key];
+
+                                        // Determine whether to show interior completion option.
+                                        // Business rules:
+                                        // - Packages with name including 'Moderate' should NEVER show interior option.
+                                        // - Packages named 'Classic', 'Premium', or 'Basic' SHOULD show interior option.
+                                        // - If packageName isn't decisive, prefer server-provided v.hasInterior when true; otherwise fall back to local heuristics.
+                                        let showInterior = false;
+                                        const pkgName = v.packageName ? String(v.packageName).toLowerCase() : '';
+                                        if (pkgName.includes('moderate')) {
+                                          showInterior = false;
+                                        } else if (pkgName && /(classic|premium|basic|hatch|hatch pack)/i.test(pkgName)) {
+                                          showInterior = true;
+                                        } else if (typeof v.hasInterior !== 'undefined' && v.hasInterior === true) {
+                                          showInterior = true;
+                                        } else {
+                                          showInterior = (p.washType === 'both' || vehicleHasInterior(v.vehicleId));
+                                        }
+
+                                        return (
+                                          <div className="flex items-center gap-2">
+                                            <button
+                                              onClick={() => handleComplete(v.vehicleId, p.scheduledDate)}
+                                              disabled={itemProcessing}
+                                              className={`px-3 py-2 text-sm rounded ${itemProcessing ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                            >
+                                              {itemProcessing ? 'Processing...' : 'Complete'}
+                                            </button>
+
+                                            {showInterior && (
+                                              <button
+                                                onClick={() => handleCompleteWithInterior(v.vehicleId, p.scheduledDate)}
+                                                disabled={itemProcessing}
+                                                className={`px-3 py-2 text-sm rounded ${itemProcessing ? 'bg-gray-300 text-gray-600' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                                              >
+                                                {itemProcessing ? 'Processing...' : 'Complete With Interior'}
+                                              </button>
+                                            )}
+                                          </div>
+                                        );
+                                      })()}
+                                    </div>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )
                         )}
                       </div>
                     ))}

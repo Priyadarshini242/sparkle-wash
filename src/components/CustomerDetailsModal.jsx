@@ -209,7 +209,7 @@ const CustomerDetailsModal = ({
   };
 
   // Vehicle Card Component (supports recent wash cancel button)
-  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher, isPreview }) => {
+  const VehicleCard = ({ vehicle, index, isMultiVehicle, onAllocateWasher, isPreview, onEditVehicle }) => {
   
 
     return (
@@ -273,7 +273,13 @@ const CustomerDetailsModal = ({
           </p>
         </div>
           <div>
-           <label className="block text-sm font-medium text-gray-600 mb-1">Package Start Date:</label>
+           <label className="block text-sm font-medium text-gray-600 mb-1">Package Start Date:
+             <button
+               onClick={() => onEditVehicle && onEditVehicle(vehicle)}
+               className="ml-2 text-blue-600 hover:underline text-xs"
+               title="Edit package dates"
+             >Edit</button>
+           </label>
             {/* Fallbacks: vehicle.packageStartDate -> vehicle.subscriptionStart -> customer.packageStartDate */}
             <p className="text-sm text-gray-900 font-medium">{
               (vehicle.packageStartDate || vehicle.subscriptionStart || (customer && customer.packageStartDate))
@@ -282,7 +288,13 @@ const CustomerDetailsModal = ({
             }</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-600 mb-1">Package End Date:</label>
+            <label className="block text-sm font-medium text-gray-600 mb-1">Package End Date:
+              <button
+                onClick={() => onEditVehicle && onEditVehicle(vehicle)}
+                className="ml-2 text-blue-600 hover:underline text-xs"
+                title="Edit package dates"
+              >Edit</button>
+            </label>
             {/* Fallbacks: vehicle.packageEndDate -> vehicle.subscriptionEnd -> customer.packageEndDate */}
             <p className="text-sm text-gray-900 font-medium">{
               (vehicle.packageEndDate  || (customer && customer.packageEndDate))
@@ -583,7 +595,7 @@ const CustomerDetailsModal = ({
                 {vehiclePreview && (
                   <div className="mb-4">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Preview Vehicle</h4>
-                    <VehicleCard vehicle={vehiclePreview} index={0} isMultiVehicle={hasMultipleVehicles} onAllocateWasher={handleAllocateWasher} isPreview />
+                    <VehicleCard vehicle={vehiclePreview} index={0} isMultiVehicle={hasMultipleVehicles} onAllocateWasher={handleAllocateWasher} isPreview onEditVehicle={onEditVehicle} />
                   </div>
                 )}
 
@@ -595,6 +607,7 @@ const CustomerDetailsModal = ({
                       index={index} 
                       isMultiVehicle={hasMultipleVehicles}
                       onAllocateWasher={handleAllocateWasher}
+                      onEditVehicle={onEditVehicle}
                     />
                   ))
                 ) : (displayCustomer?.carModel || customer.carModel) ? (
@@ -612,6 +625,7 @@ const CustomerDetailsModal = ({
                     index={0} 
                     isMultiVehicle={false}
                     onAllocateWasher={handleAllocateWasher}
+                    onEditVehicle={onEditVehicle}
                   />
                 ) : (
                   <div className="text-center py-8 text-gray-500">
